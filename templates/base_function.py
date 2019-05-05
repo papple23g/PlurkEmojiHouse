@@ -68,7 +68,7 @@ def DIV_showTipText(
             'border-radius':'6px',
             'padding':'5px 0',
             'position':'absolute',
-            'z-index':'1',
+            'z-index':'12',
             'bottom':'100%',
             'left':'50%',
             'margin-left':tip_margin_left,
