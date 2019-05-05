@@ -1,0 +1,170 @@
+﻿{% include 'base.html' %}
+
+
+
+<!--FB like and share plugin-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = 'https://connect.facebook.net/zh_TW/sdk.js#xfbml=1&version=v3.2';
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<!--FB like and share plugin END-->
+
+<script type="text/python">
+
+{% include 'PlurkEmojiFunctions.py' %}
+
+</script>
+
+<!--Header-->
+<div class="w3-row-padding w3-green" style="height:100px">
+<h1 style="font-family:微軟正黑體"><b>噗浪表符庫 1.2.1</b></h1>
+</div>
+<!--Header結束-->
+
+<!--導覽列-->
+<div class="w3-bar w3-black" style="margin:0 0 1em 0;font-family:微軟正黑體">
+  <!--
+    新增規則: id=a_bar_[pageName]
+    新增之後再下分新增對應子頁面元素: <div id="div_[pageName]" class="w3-container clearfix" style="display:none">
+  -->
+  <a href="#!" id="a_bar_search_emoji" class="w3-bar-item w3-button w3-large w3-hover-blue w3-dark-grey">搜尋表符</a>
+  <a href="#!" id="a_bar_add_emoji" class="w3-bar-item w3-button w3-large w3-hover-blue">新增表符</a>
+  <a href="#!" id="a_bar_add_emoji_list" class="w3-bar-item w3-button w3-large w3-hover-blue">批量新增<span style="color:red"> NEW</span></a>
+  <a href="#!" id="a_bar_update_diary" class="w3-bar-item w3-button w3-large w3-hover-blue">更新日誌</a>
+  <a href="#!" id="a_bar_donate" class="w3-bar-item w3-button w3-large w3-hover-blue">贊助本站</a>
+  <a href="#!" id="a_bar_about_author" class="w3-bar-item w3-button w3-large w3-hover-blue">聯絡作者</a>
+</div>
+<!--導覽列結束-->
+
+
+ <!--站內資訊-->
+<div style="text-align:right">
+  <!--FB like and share buttons-->
+  <div class="fb-like" data-href="https://papple23g-mysite2.herokuapp.com/PlurkEmojiHouse" data-layout="button_count" data-share="true" style="margin-right:25px;float:right"></div>
+  <!--站內表符和標籤的數量-->
+  <div id="site_info" style="float:right"><span style="color:white">@</span></div>
+</div>
+ <!--站內資訊結束-->
+
+
+<!--使用clearfix樣式，解決溢位問題-->
+<div class="w3-container clearfix" style="clear: both;">
+
+<!--搜尋表符頁面-->
+<div id="div_search_emoji" class="w3-container" style="display:inline">
+  <div class="w3-container w3-border w3-round-large w3-card clearfix" style="margin:0 0 1em 0;">
+    <!--左區塊-->
+    <div id="left_section" style="float:left">
+      <p>搜尋表符標籤:<span style="color:#bbb;font-size:8px"></span></p>
+      <input type="text" id="search_tag" style="size:20" placeholder="輸入角色/作品名/動詞/形容詞..."/>
+      <input type="submit" id="search_btn" value="搜尋"/>&#160;<input type="submit" id="clean_search_btn" value="全部顯示"/><br>
+      <span style="color:#bbb;font-size:8px">用逗號","區隔多個標籤</span>
+      <br/>
+      <br/>
+    </div>
+
+    <!--右區塊-->
+    <div id="right_section" style="float: left;margin-left:50px">
+      <p>使用步驟說明:</p>
+      <p>1. 搜尋表符關鍵字(或者直接點擊標籤)<br/>
+      2. 複製表符圖片網址(或者直接點擊表符)<br/>
+      3. 貼上至噗浪即可顯示表符(※網址的前後要留空白才能成功顯示)</p>
+    </div>
+  </div>
+
+  <!--顯示相似標籤-->
+  <span id="search_tag_result"></span>
+  <!--顯示相似標籤結束-->
+
+</div>
+<!--搜尋表符頁面結束-->
+
+<span id="searching_msg" style="display:none">搜尋表符中...</span>
+
+<!--新增表符頁面-->
+<div id="div_add_emoji" class="w3-container clearfix" style="display:none">
+  <div class="w3-container w3-border w3-round-large w3-card" style="margin:0 0 1em 0;">
+    <p>新增表符:</p>
+    <input type="text" id="input_add_emoji" style="size:20"/>
+    <input type="submit" id="add_emoji_btn" value="新增"/><br>
+    <span style="color:#bbb;font-size:8px">(輸入表符網址，例如 https://emos.plurk.com/2658f2e2cffb4e9d6b72d4a6374597f9_w48_h48.jpeg)</span>
+    <br/>
+    <br/>
+  </div>
+</div>
+<!--新增表符頁結束-->
+
+
+<!--批量新增表符頁-->
+<div id="div_add_emoji_list" class="w3-container clearfix" style="display:none">
+  <div class="w3-container w3-border w3-round-large w3-card" style="margin:0 0 1em 0;">
+    <p>選擇:
+    <select id="select_input_plurk_type">
+      <option value="option_input_plurk_url" selected> 輸入公開噗文網址</option>
+      <option value="option_input_plurk_html"> 輸入噗文網頁原始碼</option>
+    </select>
+    </p>
+    <input type="text" id="input_plurk_url" style="display:inline">
+    <textarea id="input_plurk_html" style="display:none"></textarea>
+    <input type="button" id="btn_send_inputed_plurk_url_or_html" value="送出">
+    <input type="button" id="btn_clear_inputed_plurk_url_or_html" value="清除結果">
+    <br><br>
+  </div>
+
+  <div id="div_emoji_list_from_html">
+  </div>
+</div>
+
+<!--批量新增表符頁結束-->
+
+
+<!--顯示搜尋結果清單-->
+<div id="emoji_tabel" class="w3-container clearfix" style="display:inline">
+  <div id="result"></div>
+  <div id="btn_of_pages"></div>
+</div>
+<!--顯示搜尋結果結束-->
+
+<!--更新日誌頁面-->
+<div id="div_update_diary" class="w3-container clearfix" style="display:none">
+  <iframe src="https://docs.google.com/document/d/e/2PACX-1vT0Z3y-e_t7ZIWRjcfOr-0f22uHqQLTDwrtNCeaPJNoI78KyviNLREvLV-eVId9MezNuRlqk2hCsHdI/pub?embedded=true"
+      style="width:900px;
+            height:1500px;
+            border:none;
+            position:relative;
+            top:-100px;
+            left:-75px;"></iframe>
+</div>
+<!--更新日誌頁面結束-->
+
+<!--贊助頁面-->
+<div id="div_donate" class="w3-container clearfix" style="display:none">
+  {% include 'donate_info.html' %}
+</div>
+<!--贊助頁面結束-->
+
+<!--聯絡作者頁面-->
+<div id="div_about_author" class="w3-container clearfix" style="display:none">
+  <section class="w3-container w3-border w3-round-large w3-card" style="margin:0 0 1em 0;">
+    <p>● 作者信箱</p>
+    <p>papple23g@gmail.com</p>
+    <hr/>
+    <p>● 作者噗浪</p>
+    <iframe src="https://www.plurk.com/getWidget?uid=4180727&amp;h=375&amp;w=200&amp;u_info=2&amp;bg=FF574D&tl=EEEBF0" width="300" frameborder="0" height="375" scrolling="no"></iframe>
+  </section>
+</div>
+<!--聯絡作者頁面結束-->
+
+</div>
+<!--溢位問題結束-->
+
+
+<!--複製文字用的隱藏區塊-->
+<input type="text" id="copy_text" style="display:none" />
+
+</body>
+</html>

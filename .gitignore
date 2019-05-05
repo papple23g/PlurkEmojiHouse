@@ -1,0 +1,9 @@
+*.pyc
+__pycache__
+staticfiles
+db.sqlite3
+.tmp.drivedownload
+.vscode
+old
+test
+plurkEmojiHouse_workspace.code-workspace

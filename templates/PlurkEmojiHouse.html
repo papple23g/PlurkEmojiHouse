@@ -1,0 +1,34 @@
+{% include 'base.html' %}
+
+
+<body onload="brython(1)">
+
+<div id="fb-root"></div>
+<script>
+    (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = 'https://connect.facebook.net/zh_TW/sdk.js#xfbml=1&version=v3.2';
+    fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+
+</script>
+
+
+<!--FB like and share buttons-->
+<div class="fb-like" data-href="https://papple23g-mysite2.herokuapp.com/PlurkEmojiHouse" data-layout="button_count" data-share="true" style="margin-right:25px;float:right"></div>
+
+
+<script type="text/python">
+
+{% include 'base_function.py' %}
+
+{% include 'request_function.py' %}
+
+{% include 'emoji_table_function.py' %}
+
+{% include 'PlurkEmojiPage.py' %}
+
+</script>        
+</body>
