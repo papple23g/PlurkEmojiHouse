@@ -172,6 +172,11 @@ def DIV_subpage_searchEmoji():
                 width: 150px;
             }
         }
+        @media only screen and (max-width: 400px) {
+            #search_tag {
+                width: 100px;
+            }
+        }
     """)
 
     #設置搜尋表符按鈕
