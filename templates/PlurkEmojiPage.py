@@ -169,7 +169,7 @@ def DIV_subpage_searchEmoji():
         }
         @media only screen and (max-width: 600px) {
             #search_tag {
-                width: 180px;
+                width: 150px;
             }
         }
     """)
