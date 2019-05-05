@@ -19,9 +19,11 @@ def SendRequest_searchEmoji(ev):
     if ev.currentTarget.id=="search_tag_btn":
         search_tag_str=doc['search_tag'].value.strip()
         request_type="search emoji by input tag"
-    #使用[全部顯示]時，關鍵字為空白
+    #使用[全部顯示]時，關鍵字為空白並清空搜尋欄和相似標籤結果
     elif ev.currentTarget.id=="show_all_emoji_btn":
         search_tag_str=""
+        doc['search_tag'].value=""
+        doc['search_tag_result'].clear()
         request_type="search emoji by click show all"
     #使用頁籤按鈕時，從按鈕物件上提取關鍵字，並抓取欲搜尋的頁次數字
     elif ev.currentTarget.className=="emoji_page_btn":
