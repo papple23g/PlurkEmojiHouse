@@ -137,7 +137,7 @@ def emoji_add_tag(request):
     Emoji.objects.get(id=emoji_id).tags.add(*add_tag_list)
     return HttpResponse(emoji_id)
 
-##功能函數，批量增加標籤
+#功能函數，批量增加標籤
 def emoji_list_add_tag(request):
     emoji_id_str_for_add_list_str=request.GET.get('emoji_id_str_for_add_list_str',None)
     tag_list_str=request.GET.get('tag_list_str',None)

@@ -38,11 +38,11 @@ def DIV_bars():
         bar_name=ev.currentTarget.text
         div_jumpto_elt=doc.select(f'#{bar_name}')[0]
         #獲取當前的DIV子頁面
-        div_previous_elt=[div_elt for div_elt in doc.select('div.subpage') if div_elt.style.display=="inline"][0]
+        div_previous_elt=[div_elt for div_elt in doc.select('div.subpage') if div_elt.style.display!="none"][0]
         #當頁面跳轉時才執行更換動作
         if div_jumpto_elt!=div_previous_elt:
             div_previous_elt.style.display="none"
-            div_jumpto_elt.style.display="inline"
+            div_jumpto_elt.style.display="block"
             #更換bar樣式
             aButton_bar_previous_elt=doc.select(".AButton_bar_actived")[0]
             aButton_bar_previous_elt.classList.remove("AButton_bar_actived")
@@ -56,6 +56,8 @@ def DIV_bars():
     '其他bars'
     div_elt<=DIV_ButtonBar("新增表符",id="button_bar_add_emoji").bind("click",onClick_bar)
     div_elt<=DIV_ButtonBar("更新日誌",id="button_bar_update_diary").bind("click",onClick_bar)
+    div_elt<=DIV_ButtonBar("其他作品",id="button_bar_other_production").bind("click",onClick_bar)
+    div_elt<=DIV_ButtonBar("關於作者",id="button_bar_about_author").bind("click",onClick_bar)
     #設定bar被按下時的樣式
     AddStyle("""
         .AButton_bar_actived{
@@ -66,6 +68,9 @@ def DIV_bars():
             font-family: 微軟正黑體;
             position: relative;
             z-index: 10;
+        }
+        #其他作品, #關於作者{
+            margin: 50px 35px;
         }
     """)
 
@@ -121,7 +126,7 @@ AddStyle('''
 
 #定義DIV子頁面:搜尋表符
 def DIV_subpage_searchEmoji():
-    div_elt=DIV(id="搜尋表符",Class="subpage",style={"display":"inline"})
+    div_elt=DIV(id="搜尋表符",Class="subpage",style={"display":"block"})
     div_card_elt=DIV(Class="div_input_card")
     div_card_elt<=BR()
     #定義[搜尋表符標籤文字框]按下Enter送出
@@ -450,17 +455,95 @@ AddStyle('''
 #定義子頁面:更新日誌
 def DIV_subpage_updateDiary():
     div_elt=DIV(id="更新日誌",Class="subpage",style={"display":"none"})
-    div_elt<=IFRAME(src="https://docs.google.com/document/d/e/2PACX-1vT0Z3y-e_t7ZIWRjcfOr-0f22uHqQLTDwrtNCeaPJNoI78KyviNLREvLV-eVId9MezNuRlqk2hCsHdI/pub?embedded=true")
+    div_elt<=DIV(IFRAME(src="https://docs.google.com/document/d/e/2PACX-1vT0Z3y-e_t7ZIWRjcfOr-0f22uHqQLTDwrtNCeaPJNoI78KyviNLREvLV-eVId9MezNuRlqk2hCsHdI/pub?embedded=true"),id="warp_iframe")
     return div_elt
+
 AddStyle('''
+    #更新日誌 #warp_iframe{
+        overflow: hidden;
+        width: 100%;
+    }
     #更新日誌 iframe{
         width: 900px;
-        height: 1500px;
-        border: none;
+        height: 3000px;
         margin-top: -80px;
-        margin-left: -50px;
+        margin-left: -63px;
+        padding-right: 380px;
+        border: 0;
     }
 ''')
+
+
+def DIV_otherProduction():
+    div_elt=DIV(id="其他作品",Class="subpage",style={"display":"none"})
+    div_elt<=H4("【網站工具】")
+    div_elt<=A(
+        IMG(
+            src="https://i.imgur.com/QhJwVs1.png",
+            width="200px",
+        ),
+        href="https://sites.google.com/view/ahktool/",
+        target="_blank",
+    )
+    div_elt<=P("● 一個提高工作效率的網站工具 - 快捷鍵語法產生器")
+    div_elt<=DIV(
+        IFRAME(
+            src="https://www.youtube.com/embed/videoseries?list=PLtO1yDnSMpUPDN9rkqTgEIOGfumA86AyG",
+            frameborder="0",
+            allow="autoplay; encrypted-media",
+            allowfullscreen=True,
+            Class="youtube_playlist",
+        ),
+        Class="youtube_playlist_container"
+    )
+    return div_elt
+
+AddStyle('''
+    .youtube_playlist_container {
+        position: relative;
+        width: 500px;
+        height: 300px;
+        padding-bottom: 56.25%;
+    }
+    .youtube_playlist {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 500px;
+        height: 300px;
+    }
+    @media screen and (max-width: 500px) {
+        .youtube_playlist_container {
+            position: relative;
+            width: 300px;
+            height: 180px;
+            padding-bottom: 56.25%;
+        }
+        .youtube_playlist {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 300px;
+            height: 180px;
+        }
+    }
+''')
+
+def DIV_about_author():
+    div_elt=DIV(id="關於作者",Class="subpage",style={"display":"none"})
+    div_elt<=P("● 作者信箱")
+    div_elt<=P("papple23g@gmail.com")+HR()
+    div_elt<=P("● 作者噗浪")
+    div_elt<=IFRAME(
+        src="https://www.plurk.com/getWidget?uid=4180727&amp;h=375&amp;w=200&amp;u_info=2&amp;bg=FF574D&tl=EEEBF0",
+        width="300",
+        frameborder="0",
+        height="375",
+        scrolling="no",
+    )
+    return div_elt
+
+
 
 #排版:置入DIV網頁header區塊
 doc<=DIV_header()
@@ -469,6 +552,8 @@ doc<=DIV_siteInfo()
 doc<=DIV_subpage_searchEmoji()
 doc<=DIV_subpage_addEmoji()
 doc<=DIV_subpage_updateDiary()
+doc<=DIV_otherProduction()
+doc<=DIV_about_author()
 
-##測試用，進入前直接顯示全部表符
+##進入前直接顯示全部表符
 doc['show_all_emoji_btn'].click()
