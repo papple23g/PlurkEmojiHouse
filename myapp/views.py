@@ -55,7 +55,7 @@ def search_by_tag(request):
     #一般搜尋表符的情況    
     else:
         #區分逗號","分出多個標籤
-        searth_tag_list=[tag for tag in search_tag.split(",") if tag!=""]
+        searth_tag_list=[tag.strip() for tag in search_tag.split(",") if tag!=""]
         #進行集合篩選
         exec('Emoji_list=Emoji.objects'+''.join(['.filter(tags__name__in=[u"'+searth_tag_i_str+'"])' for searth_tag_i_str in searth_tag_list])+'.order_by("-id")')
         Emoji_list=Emoji_list[i_raw_top:i_raw_bottom]

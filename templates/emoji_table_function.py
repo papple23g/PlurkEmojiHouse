@@ -85,7 +85,7 @@ AddStyle('''
         border-radius: 15px;
         box-shadow: 2px 2px #ccc;
     }
-    .tag_btn:hover {
+    .tag_btn:hover, .search_result_tag_btn:hover{
         background-color: rgba(10,200,200,1);
     }
     .tag_btn:active {
