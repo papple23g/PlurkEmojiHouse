@@ -1,3 +1,11 @@
+"""
+git add .
+git commit -m ""
+git push heroku master
+git push -u origin master
+"""
+
+
 #全域函數:版本號
 VERSION="1.3.0"
 
@@ -481,6 +489,7 @@ def DIV_otherProduction():
         IMG(
             src="https://i.imgur.com/QhJwVs1.png",
             width="200px",
+            id="ahktool_site_icon",
         ),
         href="https://sites.google.com/view/ahktool/",
         target="_blank",
@@ -499,6 +508,9 @@ def DIV_otherProduction():
     return div_elt
 
 AddStyle('''
+    img#ahktool_site_icon:hover {
+        box-shadow: orange 0px 0px 10px 2px;
+    }
     .youtube_playlist_container {
         position: relative;
         width: 500px;
