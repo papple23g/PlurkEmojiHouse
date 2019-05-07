@@ -123,9 +123,6 @@ def Correcting_emojiUrl(emoji_url):
             else:
                 emo_i=emoji_url.index("s.plurk.com")
             emoji_url="https://"+emoji_url[emo_i:]
-        #修正.jpg為.jpge
-        if emoji_url[-4:]==".jpg":
-            emoji_url=emoji_url[:-4]+".jpeg"
         return emoji_url
     else:
         return False
