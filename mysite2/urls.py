@@ -23,6 +23,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^home$',home),
+    url(r'^$',PlurkEmojiHouse),
     url(r'^PlurkEmojiHouse$',PlurkEmojiHouse),
     url(r'^PlurkEmojiHouse/$',PlurkEmojiHouse),
     url(r'^PlurkEmojiHouse/search_by_tag',search_by_tag),
