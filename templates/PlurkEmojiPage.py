@@ -1,4 +1,5 @@
 """
+cd "C:\Users\pappl\Google Drive\mysite2"
 git add .
 git commit -m ""
 git push heroku master
