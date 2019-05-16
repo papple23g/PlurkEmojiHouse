@@ -151,7 +151,11 @@ if 'DATABASE_URL' in os.environ:
     # Turn off DEBUG mode.
     DEBUG = False
 else:
+    STATIC_ROOT= os.path.join(BASE_DIR,'static')
+    DEBUG = False
+    '''
     STATICFILES_DIRS = (
         os.path.join(BASE_DIR, "static"),
     )
+    '''
 

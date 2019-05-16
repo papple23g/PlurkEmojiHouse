@@ -1,11 +1,22 @@
 """
+#啟動測試指令
+cd "C:\Users\pappl\Google Drive\mysite2"
+python manage.py runserver 0.0.0.0:8000
+
+#更新上傳指令
 cd "C:\Users\pappl\Google Drive\mysite2"
 git add .
 git commit -m ""
 git push heroku master
 git push -u origin master
 
+#可選指令
+heroku run python manage.py makemigrations  (可選，如果本地有新增app應用)
+heroku run  python manage.py migrate (可選，如果本地有新增app應用)
+heroku run python manage.py createsuperuser (可選，如果本地有新增超級管理員)
+heroku run python manage.py collectstatic(可選，如果有新增static的檔案)
 """
+
 
 
 #全域函數:版本號
@@ -13,6 +24,9 @@ VERSION="1.3.0"
 
 #更改網頁標題
 doc.select("head title")[0].text+=f" {VERSION}"
+
+#移除載入頁面訊息
+doc['loading_webpage_msg'].remove()
 
 #定義DIV網頁header區塊
 def DIV_header():

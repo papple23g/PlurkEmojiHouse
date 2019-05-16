@@ -4,10 +4,24 @@
 
 #定義頁籤按鈕，在生成時吸收(附加屬性)搜尋關鍵字
 def BUTTON_emijiPage_elt(num_of_emoji_page,search_tag_str):
+    #定義頁籤按鈕被按下時，套用被按下的樣式，並解除其它為未被按下的頁籤樣式
+    def BUTTONEmijiPageEltPressed(ev):
+        btn_elt_list=doc['emoji_page_btns'].select('button')
+        for btn_elt in btn_elt_list:
+            btn_elt.classList.remove("emoji_page_btn_press")
+        ev.currentTarget.classList.add("emoji_page_btn_press")
+
     btn_elt=BUTTON(num_of_emoji_page,Class="emoji_page_btn")
     btn_elt.search_tag=search_tag_str
     btn_elt.bind("click",SendRequest_searchEmoji)
+    btn_elt.bind("click",BUTTONEmijiPageEltPressed)
     return btn_elt
+AddStyle('''
+    .emoji_page_btn_press{
+        background-color:#aaa;
+    }
+''')
+
 
 #*搜尋表符並顯示結果*
 def SendRequest_searchEmoji(ev):
@@ -95,6 +109,8 @@ def SendRequest_insertEmojiPageBtn(search_tag_str):
         num_of_emoji_page_btn=int(res.text)
         for num_of_emoji_page in range(1,num_of_emoji_page_btn+1):
             doc['emoji_page_btns']<=BUTTON_emijiPage_elt(num_of_emoji_page,search_tag_str)
+        #預設第一個頁籤按鈕為按下的狀態
+        doc['emoji_page_btns'].select("#emoji_page_btns > button:nth-child(1)")[0].classList.add('emoji_page_btn_press')
     url=f'/PlurkEmojiHouse/numOfEmojiPageBtn?search_tag={search_tag_str}'
     req = ajax.ajax()
     req.bind('complete',OnComplete_insertEmojiPageBtn)
