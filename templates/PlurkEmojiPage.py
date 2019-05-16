@@ -17,10 +17,8 @@ heroku run python manage.py createsuperuser (可選，如果本地有新增超�
 heroku run python manage.py collectstatic(可選，如果有新增static的檔案)
 """
 
-
-
 #全域函數:版本號
-VERSION="1.3.0"
+VERSION="1.3.1"
 
 #更改網頁標題
 doc.select("head title")[0].text+=f" {VERSION}"
