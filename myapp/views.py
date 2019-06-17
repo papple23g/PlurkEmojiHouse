@@ -9,24 +9,9 @@ import urllib2
 from taggit.models import Tag
 TAGS = Tag.objects.all()
 
-def home(request):
-    return render(request,"home.html",)
-
-def testHttpResponse(request):
-    content='''
-    This is page1.
-    '''
-    return HttpResponse(content)
-
-def testRender(request):
-    name='Peter'
-    return render(request,"test_render.html", {'name': name})
 
 def PlurkEmojiHouse(request):
     return render(request,"PlurkEmojiHouse.html",)
-
-def testBrython(request):
-    return render(request,"Brython.html",)
 
 from django.forms.models import model_to_dict
 import json
@@ -99,9 +84,6 @@ def search_by_url(request):
         return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
     else:
         return HttpResponse(u"沒有符合 "+search_url+" 的搜尋結果(網址不正確!)")
-
-def test(request):
-    return HttpResponse(u"沒HERE!")
 
 #功能函數，批量增加表符
 def search_by_url_list(request):

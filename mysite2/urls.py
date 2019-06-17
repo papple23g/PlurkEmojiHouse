@@ -22,7 +22,6 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^home$',home),
     url(r'^$',PlurkEmojiHouse),
     url(r'^PlurkEmojiHouse$',PlurkEmojiHouse),
     url(r'^PlurkEmojiHouse/$',PlurkEmojiHouse),
@@ -35,15 +34,7 @@ urlpatterns = [
     url(r'^PlurkEmojiHouse/PlurkUrlHtml',PlurkUrlHtml),
     url(r'^PlurkEmojiHouse/NumOfEmoji_and_NumOfTag',NumOfEmoji_and_NumOfTag),
     url(r'^PlurkEmojiHouse/numOfEmojiPageBtn',numOfEmojiPageBtn),
-    url(r'^PlurkEmojiHouse/test',test),
     url(r'^PlurkEmojiHouse/emoji_list_add_tag',emoji_list_add_tag),
     
     
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-
-#for testing
-urlpatterns.extend([
-    url(r'^testHttpResponse$',testHttpResponse),
-    url(r'^testRender$',testRender),
-    url(r'^testBrython$',testBrython)
-    ])
