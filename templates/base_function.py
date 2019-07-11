@@ -2,10 +2,12 @@
 負責基本函式或共同的函式
 """
 
-from browser import window,doc,ajax,alert,bind,timer
+from browser import window,doc,ajax,alert,bind,timer,confirm
 from browser.html import *
 import json
 import copy
+
+
 
 #定義動作:複製文字 #不需要建立外部額外元素
 def CopyTextToClipborad(string):
@@ -112,10 +114,10 @@ AddStyle("""
 
 """)
 
-#定義動作:驗證和更正表符網址
+#定義動作:驗證和更正表符網址(v1.0)
 def Correcting_emojiUrl(emoji_url):
+    emoji_url=emoji_url.replace("*","")
     if ("s.plurk.com" in emoji_url) and (emoji_url.count(".")==3):
-        request_type="search or add emoji by input url"
         #修正開頭不是https的url
         if emoji_url[:8]!="https://":
             if "emos.plurk.com" in emoji_url:
@@ -137,3 +139,25 @@ def getEmojiUrlListFromHtml(html_str):
         if emojiUrl not in emojiUrlList_com:
             emojiUrlList_com.append(emojiUrl)
     return ["https://emos.plurk.com/"+emojiUrl for emojiUrl in emojiUrlList_com]
+
+#擷取表符網址後段id
+def EmojiUrlId(emoji_url):
+    return emoji_url[emoji_url.rfind('/')+1:emoji_url.rfind('.')]
+
+#定義動作:跳至新增組合表符頁面
+def JumpToAddCombindEmoji(emoji_url):
+    doc['button_bar_add_emoji'].click()
+    doc['select_adding_emoji_method'].value="組合表符"
+    doc['btn_clean_combind_emoji'].click()
+    change_ev=window.Event.new("change")
+    doc['select_adding_emoji_method'].dispatchEvent(change_ev)
+    focus_ev=window.FocusEvent.new("focus")
+    doc['textarea_input_combind_emoji_urls'].dispatchEvent(focus_ev)
+    doc['textarea_input_combind_emoji_urls'].style.color="black"
+    doc['textarea_input_combind_emoji_urls'].value=f"*{emoji_url}*"
+
+#定義動作:跳至搜尋表符
+def JumpToSearchEmoji(input_value):
+    doc['button_bar_search_emoji'].click()
+    doc['search_tag'].value=input_value
+    doc['search_tag_btn'].click()

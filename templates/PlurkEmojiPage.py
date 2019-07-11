@@ -6,7 +6,7 @@ python manage.py runserver 0.0.0.0:8000
 #更新上傳指令
 cd "C:\Users\pappl\Google Drive\mysite2"
 git add .
-git commit -m ""
+git commit -m "1.4.0"
 git push heroku master
 git push -u origin master
 
@@ -18,7 +18,7 @@ heroku run python manage.py collectstatic(可選，如果有新增static的檔�
 """
 
 #全域函數:版本號
-VERSION="1.3.1"
+VERSION="1.4.0"
 
 #更改網頁標題
 doc.select("head title")[0].text+=f" {VERSION}"
@@ -36,6 +36,9 @@ def DIV_header():
     div_elt<=H1_title_elt
     return div_elt
 AddStyle('''
+    #here{
+        height: 100px;
+    }
     #div_header{
         height: 100px;
         position: relative;
@@ -245,8 +248,7 @@ def DIV_subpage_searchEmoji():
             '使用步驟說明:'+BR()
             +'1. 搜尋表符關鍵字(或者直接點擊標籤)'+BR()
             +'2. 複製表符圖片網址(或者直接點擊表符)'+BR()
-            +'3. 貼上至噗浪即可顯示表符'+BR()
-            +'(※網址的前後要留空白才能成功顯示)'
+            +'3. 貼上至噗浪即可顯示表符'
             )
 
         return div_elt
@@ -312,12 +314,15 @@ def DIV_subpage_addEmoji():
             doc['div_input_plurk_url_to_add_emoji_elt'].classList.toggle("hidden")
         elif ev.currentTarget.value=="噗文網頁原始碼":
             doc['div_input_html_to_add_emoji_elt'].classList.toggle("hidden")
+        elif ev.currentTarget.value=="組合表符":
+            doc['div_input_combind_emoji_urls'].classList.toggle("hidden")
 
 
-    select_elt=SELECT(style={"margin-bottom":"15px"})
+    select_elt=SELECT(id="select_adding_emoji_method",style={"margin-bottom":"15px"})
     select_elt<=OPTION("表符圖片網址")
     select_elt<=OPTION("公開噗文網址")
     select_elt<=OPTION("噗文網頁原始碼")
+    select_elt<=OPTION("組合表符")
     select_elt.bind("change",ChangeAddingEmojiMethod)
  
     #定義綁定按下Enter送出新增表符
@@ -406,11 +411,169 @@ def DIV_subpage_addEmoji():
         
         return div_elt
 
+
+    #設置輸入組合表符網址新增組合表符DIV元素
+    def DIV_input_urls_add_combindEmoji():
+
+        #定義動作:刷新組合表符預覽圖片
+        def ReloadCombindEmoji(ev):
+            for img_emoji_elt in doc['div_combind_emoji'].select('img'):
+                img_emoji_elt.src+='?'
+
+        #定義動作:分析組合表符網址
+        def AnalyzeCombineEmojiUrls(ev):
+            #抓取之前的組合表符的表符網址集合列表，做為偵測重複圖片避免動圖不同步問題
+            img_previous_emoji_url_list=list(set([img_elt.src for img_elt in doc['div_show_adding_emoji_result_table_area'].select("#div_combind_emoji img")]))
+            #清空組合表符結果
+            doc['div_show_adding_emoji_result_table_area'].clear()
+            #去除空白和星號
+            inputCombineEmojiUrls_str=doc['textarea_input_combind_emoji_urls'].value.replace(" ","").replace("　","").replace("＊","").replace("*","").replace("#","").replace("?","").replace("http://","https://")
+            #進行分析
+            if inputCombineEmojiUrls_str:
+                #檢驗網址是否符合規格
+                if "https://" in inputCombineEmojiUrls_str:
+                    #檢驗表符數量是否為一個以上
+                    if inputCombineEmojiUrls_str.count("https://")>=2:
+                        #預期輸出標準的組合表符網址規格拿去替換原本的textarea輸入
+                        com_textarea=""
+
+                        #預期輸出組合表符網址陣列，以利之後批次建構並顯示組合表符
+                        emoji_url_list_list=[]
+
+                        #設置組合表符的DIV容器元素
+                        div_combind_emoji_elt=DIV(id="div_combind_emoji")
+                        doc['div_show_adding_emoji_result_table_area']<=div_combind_emoji_elt
+
+                        #合併並生成組合表符
+                        #分割行數
+                        emoji_url_line_list=inputCombineEmojiUrls_str.split('\n')
+                        #去除空白的行
+                        emoji_url_line_list=(emoji_url_line for emoji_url_line in emoji_url_line_list if emoji_url_line)
+                        for emoji_url_line in emoji_url_line_list:
+                            emoji_url_list=[]
+                            #以https://分割表符網址
+                            emoji_url_oneLine_list=emoji_url_line.split('https://') 
+                            for emoji_url in emoji_url_oneLine_list[1:]:
+                                emoji_url_beforeCorrected='https://'+emoji_url
+                                emoji_url=Correcting_emojiUrl(emoji_url_beforeCorrected)
+                                if emoji_url:
+                                    com_textarea+='*'+emoji_url+'*'
+                                    emoji_url_list.append(emoji_url)
+                                else:
+                                    (f"{emoji_url_beforeCorrected}\n表符網址格式不符")
+                                    return
+                            com_textarea+='\n'
+                            emoji_url_list_list.append(emoji_url_list)
+                        
+                        #批次建構並顯示組合表符
+                        for emoji_url_list in emoji_url_list_list:
+                            for emoji_url in emoji_url_list:
+                                emoji_url=emoji_url+"?" if emoji_url in img_previous_emoji_url_list else emoji_url
+                                div_combind_emoji_elt<=IMG(src=emoji_url)
+                            div_combind_emoji_elt<=BR()
+                        
+                        #去除最後多餘的換行
+                        com_textarea=com_textarea[:-1]
+                        
+                        #將標準的組合表符網址規格拿去替換原本的textarea輸入
+                        doc['textarea_input_combind_emoji_urls'].value=com_textarea
+
+                        #設置新增組合表符按鈕
+                        btn_add_combind_emoji_elt=BUTTON("確定新增",id="btn_add_combind_emoji",style={"margin":"10px 0 15px 0"})
+                        btn_add_combind_emoji_elt.combind_url=com_textarea
+                        btn_add_combind_emoji_elt.bind("click",SendRequest_addCombindEmoji)
+
+                        #設置刷新組合表符圖片預覽按鈕
+                        btn_reload_combind_emoji_elt=BUTTON("刷新",id="btn_reload_combind_emoji",style={"margin":"10px 0px 15px 8px"})
+                        btn_reload_combind_emoji_elt.bind("click",ReloadCombindEmoji)
+
+
+                        #排版
+                        doc['div_show_adding_emoji_result_table_area']<=btn_add_combind_emoji_elt
+                        doc['div_show_adding_emoji_result_table_area']<=btn_reload_combind_emoji_elt
+
+                    else:
+                        alert("組合表符須為兩個以上")
+                else:
+                    alert("表符網址格式不符")
+            #若無輸入網址，就不動作
+            else:
+                pass
+
+        #定義動作:清空組合表符
+        def CleanUpCombineEmojiUrls(ev):
+            doc['div_show_adding_emoji_result_table_area'].clear()
+            doc['textarea_input_combind_emoji_urls'].value=doc['textarea_input_combind_emoji_urls'].placeholder_value
+            doc['textarea_input_combind_emoji_urls'].style.color=doc['textarea_input_combind_emoji_urls'].placeholder_value_color
+
+
+        #設置說明DIV區塊
+        def DIV_description():
+            div_elt=DIV()
+            div_elt<=PRE(
+                "輸入組合表符網址格式，例如:\n*[表符一]**[表符二]*\n*[表符三]**[表符四]*",
+                style={
+                    "margin-top":"0px",
+                    "font-size":"10px",
+                }
+            )
+            return div_elt
+
+        div_elt=DIV(
+            Class="adding_emoji_input_area hidden",
+            id="div_input_combind_emoji_urls",
+            style={"float":"left"},
+        )
+
+        #定義動作:點擊輸入表符組合textarea時，清空預設value
+        def OnFocus_textarea_inputCombineEmojiUrls(ev):
+            textarea_inputCombineEmojiUrls_elt=ev.currentTarget
+            if textarea_inputCombineEmojiUrls_elt.value==textarea_inputCombineEmojiUrls_elt.placeholder_value:
+                textarea_inputCombineEmojiUrls_elt.value=""
+                textarea_inputCombineEmojiUrls_elt.style.color="black"
+            else:
+                pass
+
+        #設置輸入組合表符TEXTAREA元素
+        #預期設置預設值和其顏色
+        placeholder_value="*https://emos.plurk.com/274652cbac1a9b1445f576b07f71b105_w48_h48.gif**https://emos.plurk.com/731c6cbbc16ae92a8de9f9e2369094f8_w48_h48.gif*\n*https://emos.plurk.com/b9cf8de34c1fa5bbe22567f867c9adef_w48_h48.gif**https://emos.plurk.com/1c4e339b0b9b6cc971e97a12d1a4681a_w48_h48.gif*"
+        placeholder_value_color="#ccc"
+        #設置元素
+        textarea_inputCombineEmojiUrls_elt=TEXTAREA(
+            placeholder_value,
+            id="textarea_input_combind_emoji_urls",
+            Class="input_url_elt",
+            nowarp=True,
+            style={"color":"gray"},
+        ).bind("focus",OnFocus_textarea_inputCombineEmojiUrls)
+        #設置預設值和其顏色
+        textarea_inputCombineEmojiUrls_elt.placeholder_value=placeholder_value
+        textarea_inputCombineEmojiUrls_elt.placeholder_value_color=placeholder_value_color
+
+        div_elt<=DIV_description()
+
+        div_elt<=textarea_inputCombineEmojiUrls_elt+BR()
+
+        div_elt<=BUTTON(
+            "預覽",
+        ).bind("click",AnalyzeCombineEmojiUrls)
+
+        div_elt<=BUTTON(
+            "清除",
+            id="btn_clean_combind_emoji",
+            style={"margin-left":"10px"}
+        ).bind("click",CleanUpCombineEmojiUrls)
+        
+        
+        return div_elt
+
+
     #排版
     div_card_elt<=SPAN("選擇輸入 ")+select_elt+BR()
     div_card_elt<=DIV_input_emoji_url_to_add_emoji()
     div_card_elt<=DIV_input_plurk_url_to_add_emoji()
     div_card_elt<=DIV_input_html_to_add_emoji()
+    div_card_elt<=DIV_input_urls_add_combindEmoji()
 
     div_elt<=div_card_elt
     div_elt<=DIV("新增表符中...",Class="hidden msg_string",id="adding_emoji_msg")
@@ -419,8 +582,10 @@ def DIV_subpage_addEmoji():
         id="div_show_adding_emoji_result_table_area",
         Class="div_emoji_result_table_area",
     )
-    
-    
+    div_elt<=DIV(
+        id="div_show_adding_emoji_result_table_area",
+        Class="hidden",
+    )
     return div_elt
 AddStyle('''
     a {
@@ -465,12 +630,17 @@ AddStyle('''
         padding: 10px;
         margin-right: 7px;
         margin-bottom: 7px;
-        
     }
     .input_url_elt:focus{
         border: 2px solid rgb(255,209,112) !important;
         box-shadow:0px 0px 3px rgb(243,236,79);
         margin-right:5px !important;
+    }
+    #textarea_input_combind_emoji_urls{
+        width:900px;
+        overflow: scroll;
+        height: 150px;
+        white-space: nowrap;
     }
 ''')
 
@@ -581,5 +751,5 @@ doc<=DIV_subpage_updateDiary()
 doc<=DIV_otherProduction()
 doc<=DIV_about_author()
 
-##進入前直接顯示全部表符
+#進入前直接顯示全部表符
 doc['show_all_emoji_btn'].click()

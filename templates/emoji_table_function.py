@@ -17,7 +17,7 @@ def IMG_emoji(emoji_url):
     show_text_str="複製表符網址"
     show_text_on_click_str="已複製"
     def CopyEmojiUrl(ev):
-        CopyTextToClipborad(emoji_url)
+        CopyTextToClipborad(f"*{emoji_url}*")
         span_tooltiptext=ev.currentTarget.parent.select('.tooltiptext')[0]
         #定義動作:改變提示文字
         def ChangeBackTooltiptext():
@@ -39,7 +39,7 @@ def IMG_emoji(emoji_url):
         timer.set_timeout(ChangeBackTooltiptext,1000)
 
     #設置IMG表符元素
-    img_elt=IMG(src=emoji_url,Class="emoji_pic")
+    img_elt=IMG(src=emoji_url,Class="emoji_pic",id=f"{EmojiUrlId(emoji_url)}")
     img_elt.bind('click',CopyEmojiUrl)
     
     img_elt=DIV_showTipText(img_elt,show_text_str)
@@ -94,18 +94,64 @@ AddStyle('''
     }
     ''')
 
-
 #定義TD表符結果表格單橫列元素
 def TR_emoji(emoji_url,emoji_id,tag_str_list):
+
+    #定義動作:搜尋或新增組表符
+    def SearchOrAddCombindEmoji(ev):
+        #點擊[搜尋表符]子頁籤，確保正在該子頁面動作
+        doc['button_bar_search_emoji'].click()
+        #若該子頁面呈現組合表符頁面，就點擊[返回]按鈕
+        if doc.select('#btn_back'):
+            doc['btn_back'].click()
+
+        combind_emoji_btn_elt=ev.currentTarget
+        #若該表符還沒有組合表符，就詢問是否要新增組合表符
+        if "has_combind_emoji" not in combind_emoji_btn_elt.classList:
+            do_add_combind_emoji=confirm("這個表符還沒有組合表符，要新增組合表符嗎?")
+            #若要新增，就跳至新增組合表符頁面
+            if do_add_combind_emoji:
+                JumpToAddCombindEmoji(combind_emoji_btn_elt.emoji_url)
+            #若不要新增，就不動作
+            else:
+                pass
+        #若該表符已經有組合表符，則戰時切換至組合表符結果頁面
+        else:
+            #隱藏表符TABLE和頁籤DUV元素
+            doc['table_emoji_result'].classList.toggle("hidden")
+            doc['emoji_page_btns'].classList.toggle("hidden")
+            #置入組合表符結果頁面DIV_TABLE元素
+            doc['emoji_result_table']<=DIV_CombindEmojiTable(combind_emoji_btn_elt.combind_url_list,combind_emoji_btn_elt.emoji_url)
+
+
     #定義表符圖示下方的動作按鈕
-    def TD_emoji_action_area():
+    def TD_emoji_action_area(emoji_url):
         td_elt=TD(Class="emoji_action_area")
         div_elt=DIV()
+
+        #設置在噗浪上搜尋表符icon元素
         search_on_plurk_linked_btn_elt=A(
             I(Class="emoji_action fas fa-search"),
             href="https://www.plurk.com/search?time=365&q="+emoji_url,
-            target="_blank")
+            target="_blank",
+            title="在噗浪上搜尋該表符",
+        )
+
+        #設置搜尋組合表符icon元素
+        combind_emoji_btn_elt=I(
+            Class=f"emoji_action fas fa-th-large icon_combind_emoji {EmojiUrlId(emoji_url)}",
+            title="查看組合表符",
+        ).bind("click",SearchOrAddCombindEmoji)
+        combind_emoji_btn_elt.emoji_url=emoji_url
+        #預定設置附加物件:組合表符網址列表
+        combind_emoji_btn_elt.combind_url_list=None
+
+        #送出請求:搜尋還此表符的組合表符，並且會根據結果改變icon的classList
+        SendRequest_SearchCombindEmoji(emoji_url,combind_emoji_btn_elt)
+        
+        #排版
         div_elt<=search_on_plurk_linked_btn_elt
+        div_elt<=combind_emoji_btn_elt
         td_elt<=div_elt
         return td_elt
     #定義動作:在輸入標籤欄上按下Enter時，點擊新增表符DIV按鈕
@@ -130,6 +176,7 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
         div_elt<=INPUT(
             type='text',
             Class="adding_emoji_tag",
+            title="新增標籤",
         ).bind('keydown',PressEnterToAddTag)
         #設置新增表符按鈕
         def DIV_add_tag_button():
@@ -144,7 +191,11 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
                                 'max-width':'66px'}
                         ,Class="btn_add_tag")
             btn_elt.emoji_id=emoji_id
-            btn_elt<=SPAN("新增",style={'color':'#aaa'})
+            btn_elt<=SPAN(
+                "新增",
+                style={'color':'#aaa'},
+                title="新增標籤",
+                )
                        
             btn_elt.bind('click',SendRequest_addTag)
             return btn_elt
@@ -203,7 +254,10 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
         #設置複製標籤列按鈕<i class="far fa-window-maximize"></i>
         def DIV_tagListActionIconList():
             div_elt=DIV(style={'float':'right'})
-            div_elt<=I(Class="tag_list_action far fa-window-maximize change_tag_list_to_str").bind("click",ChangeTagListToString)
+            div_elt<=I(
+                Class="tag_list_action far fa-window-maximize change_tag_list_to_str",
+                title="顯示/隱藏純文字標籤"
+            ).bind("click",ChangeTagListToString)
             div_elt<=DIV_showTipText(
                 I(Class="tag_list_action far fa-copy copy_tag_list_str").bind("click",CopyTagListStr),
                 "複製所有標籤",
@@ -269,12 +323,19 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
             + td_span_tag_list
         )
         +TR(
-            TD_emoji_action_area()
+            TD_emoji_action_area(emoji_url)
             + TD_function()
         )
     )
     return com_tr
 AddStyle('''
+    .icon_combind_emoji{
+        cursor: pointer;
+    }
+    .icon_combind_emoji.has_combind_emoji{
+        color: #d23c00b5;
+        border-color: #d23c0080;
+    }
     .icon_pressed{
         background-color: #ddd;
         color: #aaa !important;
@@ -306,31 +367,39 @@ AddStyle('''
         font-weight:bold;
         font-family: 微軟正黑體;
     }
+    .emoji_action{
+        font-size: 17px;
+        margin-left: 2px;
+        border-radius: 3px;
+    }
     .emoji_action , .tag_list_action{
         color: #ccc;
         border: solid 2px #ccc;
         padding: 2px;
         cursor: pointer;
-        margin-right: 5px;
     }
     .tag_list_action{
         font-size: 18px;
         border-radius: 6px;
+        margin-right: 5px;
     }
     .emoji_action{
-        font-size: 15px;
-        margin-left: 5px;
-        border-radius: 20px;
+        font-size: 17px;
+        margin-left: 2px;
+        border-radius: 3px;
     }
 ''')
 
 #定義TABLE表符結果表格元素:輸入res的表符字典串列，回傳TABLE表符果
 def TABLE_emojiReslut(res_emoji_dict_list):
     emoji_dict_list=json.loads(res_emoji_dict_list.text)
-    ##取消預設動作:雙擊選取
+    #取消預設動作:雙擊選取
     def cancelSelection(ev):
         window.getSelection().removeAllRanges()
-    table=TABLE(Class="").bind('dblclick',cancelSelection)
+    table=TABLE(
+        Class="",
+        id="table_emoji_result",
+    ).bind('dblclick',cancelSelection)
     table<=TR_emojiReslut()
     for emoji_dict in emoji_dict_list:
         emoji_url=emoji_dict['url']
@@ -371,3 +440,119 @@ AddStyle('''
 
 
     ''')
+
+
+
+#定義組合表符DIV_TABLE元素
+def DIV_CombindEmojiTable(combind_url_list,emoji_url):
+
+    #定義動作:從組合表符頁面返回表符TABLE頁面，並將刪除組合表符的訊息傳至前頁的組合表符ICON
+    def BackToEmojiTablePage(ev):
+        btn_back_elt=ev.currentTarget
+        #清除自組合表符頁面
+        doc['div_combind_emoji_table'].remove()
+        #顯示表符TABLE頁面和頁籤DIV元素
+        doc['table_emoji_result'].classList.toggle("hidden")
+        doc['emoji_page_btns'].classList.toggle("hidden")
+        doc<=A(
+            id="a_led_to_emoji_tr",
+            href=f"#{EmojiUrlId(btn_back_elt.emoji_url)}"
+        )
+        doc['a_led_to_emoji_tr'].click()
+        doc['a_led_to_emoji_tr'].remove()
+        
+        do_delete_combind_url_list=btn_back_elt.do_delete_combind_url_list
+        #刪除組合表符ICON的附加元素，組合表符串列，內的組合表符
+        #獲取對應表符IMG元素以及對應組合表符ICON元素
+        img_emoji_elt=doc[f'{EmojiUrlId(emoji_url)}']
+        icon_combind_emoji_elt=ParentElt(img_emoji_elt,"TR").nextSibling.select('.icon_combind_emoji ')[0]
+        #進行刪除組合表符ICON的附加元素
+        for do_delete_combind_url in do_delete_combind_url_list:
+            icon_combind_emoji_elt.combind_url_list.remove(do_delete_combind_url)
+    
+    #定義動作:刷新組合表符預覽圖片
+    def ReloadCombindEmoji(ev):
+        for img_emoji_elt in ev.currentTarget.parent.select('img'):
+            img_emoji_elt.src+='?'
+    
+    #定義動作:複製組合表符網址
+    def doCopyCombindEnoji(ev):
+        btn_copy_combind_emoji_elt=ev.currentTarget
+        combind_url=btn_copy_combind_emoji_elt.combind_url
+        CopyTextToClipborad(combind_url)
+        alert("複製成功")
+
+    #定義動作:跳至新增組合表符頁面
+    def _JumpToAddCombindEmoji(ev):
+        btn_add_combind_emoji_elt=ev.currentTarget
+        emoji_url=btn_add_combind_emoji_elt.emoji_url
+        #返回表符列表TABLE
+        JumpToAddCombindEmoji(emoji_url)
+
+    #定義動作:刪除組合表符
+    def DeleteCombindEmoji(ev):
+        do_delete_combind_emoji=confirm("確定要刪除這個組合表符嗎?")
+        if do_delete_combind_emoji:
+            btn_delete_combind_emoji_elt=ev.currentTarget
+            SendRequest_DeleteCombindEmoji(btn_delete_combind_emoji_elt.combind_url,btn_delete_combind_emoji_elt)
+        else:
+            pass
+
+    #設置組合表符DIV_TABLE元素
+    div_elt=DIV(id="div_combind_emoji_table")
+
+    div_elt<=IMG(src=emoji_url)+BR()
+
+    #設置返回表符TABLE按鈕
+    btn_back_elt=BUTTON("返回",id="btn_back")##,Class="w3-btn w3-ripple w3-green")
+    btn_back_elt.emoji_url=emoji_url
+    btn_back_elt.do_delete_combind_url_list=[] #紀錄刪除的組合組表，以便將資訊回傳至表符TABLE的組合表符icon元素
+    btn_back_elt.bind("click",BackToEmojiTablePage)
+
+    btn_add_combind_emoji_elt=BUTTON("新增組合表符",style={"margin":"10px 0px 15px 8px"})
+    btn_add_combind_emoji_elt.emoji_url=emoji_url
+    btn_add_combind_emoji_elt.bind("click",_JumpToAddCombindEmoji)
+
+    div_elt<=btn_back_elt
+    div_elt<=btn_add_combind_emoji_elt
+    
+    table_elt=TABLE(id="table_combind_emoji")
+    for combind_url_with_vertical_symbol in combind_url_list:
+        div_combindEmoji_elt=DIV(id="div_img_combind_emoji")
+        emoji_url_list_list=[[emoji_url.replace("*","") for emoji_url in combind_url_line.split("**")] for combind_url_line in combind_url_with_vertical_symbol.split("|")]
+        for emoji_url_list in emoji_url_list_list:
+            for emoji_url in emoji_url_list:
+                div_combindEmoji_elt<=IMG(src=emoji_url).bind("click",lambda ev:JumpToSearchEmoji(ev.currentTarget.src))
+            div_combindEmoji_elt<=BR()
+        
+        #設置複製組合表符網址按鈕，並事先將含有直線符號斷行的組合表符網址改為正規網址
+        combind_url=combind_url_with_vertical_symbol.replace("|","\n")
+        btn_copy_combind_emoji_elt=BUTTON("複製組合表符網址")
+        btn_copy_combind_emoji_elt.combind_url=combind_url
+        btn_copy_combind_emoji_elt.bind("click",doCopyCombindEnoji)
+        
+        #設置刷新組合表符圖片預覽按鈕
+        btn_reload_combind_emoji_elt=BUTTON("刷新",id="btn_reload_combind_emoji",style={"margin":"10px 0px 15px 8px"})
+        btn_reload_combind_emoji_elt.bind("click",ReloadCombindEmoji)
+
+        btn_delete_combind_emoji_elt=BUTTON("刪除",id="btn_delete_combind_emoji",style={"margin":"10px 0px 15px 8px"})
+        btn_delete_combind_emoji_elt.combind_url=combind_url
+        btn_delete_combind_emoji_elt.bind("click",DeleteCombindEmoji)
+
+        div_combindEmoji_elt<=btn_copy_combind_emoji_elt
+        div_combindEmoji_elt<=btn_reload_combind_emoji_elt
+        div_combindEmoji_elt<=btn_delete_combind_emoji_elt
+
+        table_elt<=TR(TD(div_combindEmoji_elt))
+        
+    div_elt<=table_elt
+    return div_elt
+AddStyle('''
+    #div_img_combind_emoji img{
+        cursor:pointer;
+        vertical-align: top;
+    }
+    #div_img_combind_emoji img:hover{
+        opacity: 0.5;
+    }
+''')

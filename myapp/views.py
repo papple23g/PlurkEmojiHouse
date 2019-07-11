@@ -3,12 +3,27 @@ from __future__ import unicode_literals
 
 from django.shortcuts import render
 from django.http import HttpResponse
-from myapp.models import Emoji
+from myapp.models import Emoji,CombindEmoji
 from django.core import serializers
 import urllib2
 from taggit.models import Tag
 TAGS = Tag.objects.all()
 
+
+#定義動作:驗證和更正表符網址(v1.0)
+def Correcting_emojiUrl(emoji_url):
+    emoji_url=emoji_url.replace("*","")
+    if ("s.plurk.com" in emoji_url) and (emoji_url.count(".")==3):
+        #修正開頭不是https的url
+        if emoji_url[:8]!="https://":
+            if "emos.plurk.com" in emoji_url:
+                emo_i=emoji_url.index("emos.plurk.com")
+            else:
+                emo_i=emoji_url.index("s.plurk.com")
+            emoji_url="https://"+emoji_url[emo_i:]
+        return emoji_url
+    else:
+        return False
 
 def PlurkEmojiHouse(request):
     return render(request,"PlurkEmojiHouse.html",)
@@ -91,7 +106,8 @@ def search_by_url_list(request):
     search_url_list=search_url_list_str.split(",")
     Emoji_dict_list=[]
     for search_url in search_url_list:
-        if ("https://emos.plurk.com/" in search_url):
+        search_url=Correcting_emojiUrl(search_url)
+        if search_url:
             search_url=search_url.strip()  #去除網址前後空白
             Emoji_obj_list=Emoji.objects.filter(url=search_url)
             #若表符已存在，則僅將該資料回傳表符字典
@@ -179,3 +195,28 @@ def PlurkUrlHtml(request):
     headers={"User-Agent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8 GTB7.1 (.NET CLR 3.5.30729)", "Referer": "http://example.com"}
     res=requests.get(plurk_url, headers=headers, timeout=10)
     return HttpResponse(res)
+
+#功能函數:新增組合表符
+def AddCombindEmoji(request):
+    #獲取並分析表符的集合網址串列
+    combind_url=request.GET.get('combind_url',None)
+    combind_url_splitted_str=combind_url.replace("**","|").replace("*","")
+    emoji_url_set=list(set(combind_url_splitted_str.split("|")))
+    #檢查該組合表符是否已經存在，若不存在就新增該組合表符
+    if not CombindEmoji.objects.filter(combind_url=combind_url):
+        combindEmoji=CombindEmoji.objects.create(combind_url=combind_url)
+        combindEmoji.emoji_url_set.add(*emoji_url_set)
+    return HttpResponse(json.dumps(emoji_url_set), content_type="application/json")
+
+#功能函數:刪除組合表符
+def DeleteCombindEmoji(request):
+    #獲取表符的集合網址串列
+    combind_url=request.GET.get('combind_url',None)
+    CombindEmoji.objects.filter(combind_url=combind_url)[0].delete()
+    return HttpResponse('done', content_type="application/json")
+
+#功能函數:搜尋組合表符
+def SearchCombindEmoji(request):
+    emoji_url=request.GET.get('emoji_url',None)
+    combind_url_list=[combindEmoji.combind_url for combindEmoji in CombindEmoji.objects.filter(emoji_url_set__name__in=[emoji_url])]
+    return HttpResponse(json.dumps(combind_url_list), content_type="application/json")

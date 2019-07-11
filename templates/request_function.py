@@ -51,6 +51,7 @@ def SendRequest_searchEmoji(ev):
         request_type="search emoji by click tag in emoji tag list"
         #點擊一下[搜尋表符]頁籤，確保出現在搜尋結果頁面(新增表符點擊標籤時會跳至搜尋表符頁面)
         doc['button_bar_search_emoji'].click()
+    #使用上方標籤搜尋結果區塊的標籤搜尋時
     elif ev.currentTarget.className=="search_result_tag_btn":
         search_tag_str=ev.currentTarget.select(".search_result_tag_btn_text")[0].text
         request_type="search emoji by click tag in search tag result"
@@ -109,8 +110,9 @@ def SendRequest_insertEmojiPageBtn(search_tag_str):
         num_of_emoji_page_btn=int(res.text)
         for num_of_emoji_page in range(1,num_of_emoji_page_btn+1):
             doc['emoji_page_btns']<=BUTTON_emijiPage_elt(num_of_emoji_page,search_tag_str)
-        #預設第一個頁籤按鈕為按下的狀態
-        doc['emoji_page_btns'].select("#emoji_page_btns > button:nth-child(1)")[0].classList.add('emoji_page_btn_press')
+        #預設第一個頁籤按鈕為按下的狀態(僅會在「搜尋表符」子頁面下發揮作用)
+        if doc['emoji_page_btns'].select("#emoji_page_btns > button:nth-child(1)"):
+            doc['emoji_page_btns'].select("#emoji_page_btns > button:nth-child(1)")[0].classList.add('emoji_page_btn_press')
     url=f'/PlurkEmojiHouse/numOfEmojiPageBtn?search_tag={search_tag_str}'
     req = ajax.ajax()
     req.bind('complete',OnComplete_insertEmojiPageBtn)
@@ -223,8 +225,8 @@ def SendRequest_DeleteTag(ev):
     #從TD標籤列表中獲取表符id
     emoji_id_str=str(ParentElt(ev.currentTarget,"TD").emoji_id)
     #設置確認刪除的跳出視窗
-    comfirm_box=("確定要刪除 [{}] 這個標籤嗎?".format(tag_name))
-    going_to_del_tag=window.confirm(comfirm_box)
+    confirm_box=("確定要刪除 [{}] 這個標籤嗎?".format(tag_name))
+    going_to_del_tag=window.confirm(confirm_box)
     #若確定要刪除標籤
     if going_to_del_tag:
         #送出刪除請求
@@ -357,7 +359,7 @@ def UnselectAllHtmlEmoji(ev):
     for selected_htmlEmoji_elt in doc['html_emoji_container'].select('.selected_html_emoji'):
         selected_htmlEmoji_elt.classList.toggle("selected_html_emoji")
 
-def SendCnfirmSelectedHtmlEmojiToAdd(ev):
+def SendConfirmSelectedHtmlEmojiToAdd(ev):
     selected_imgHtmlEmoji_elt_list=doc['html_emoji_container'].select('.selected_html_emoji img')
     selected_imgHtmlEmoji_url_list=[elt.src for elt in selected_imgHtmlEmoji_elt_list]
     emoji_url_list_str=",".join(selected_imgHtmlEmoji_url_list)
@@ -383,7 +385,7 @@ def DIV_emojiUrlList_to_divImgList(emoji_url_list):
         )
     btn1=BUTTON("全選",id="btn_select_all").bind('click',SelectAllHtmlEmoji)
     btn2=BUTTON("全不選",id="btn_unselect_all").bind('click',UnselectAllHtmlEmoji)
-    btn3=BUTTON("確定新增",id="btn_send_confirm_selected").bind('click',SendCnfirmSelectedHtmlEmojiToAdd)
+    btn3=BUTTON("確定新增",id="btn_send_confirm_selected").bind('click',SendConfirmSelectedHtmlEmojiToAdd)
     div_elt<=btn1+btn2+div_emojiBlocks_elt+DIV(btn3,style={"clear":"both"})
     if emoji_url_list:
         return div_elt
@@ -490,16 +492,17 @@ def SendRequest_addTagOnAllEmojiAtOnce(ev):
 
 
 #定義請求:新增表符列表
-def SendRequest_addEmojiList(emoji_url_list_str):
+def SendRequest_addEmojiList(emoji_url_list_str,do_clean_previous_area=True):
     #清除之前的新增結果
-    doc['div_show_adding_emoji_result_table_area'].clear()
+    if do_clean_previous_area:
+        doc['div_show_adding_emoji_result_table_area'].clear()
     #定義按下Enter送出新增批量標籤
     def pressEnterToSend(ev):
         #在ev有附加屬性key時才執行(避免出現錯誤)
         if hasattr(ev, 'key'):
             if ev.key=="Enter":
                 doc['btn_add_tag_on_all_emoji_at_once'].click()
-    #設置將新的表符一次新增標籤的DIV_INPUT_BUTTON元素
+    #設置針對新的表符批量新增標籤的DIV_INPUT_BUTTON元素
     def DIV_addTagOnAllEmojiAtOnce():
         div_elt=DIV(style={"margin-bottom":"8px"})
         div_elt<=SPAN("全部新增標籤: ")
@@ -543,7 +546,97 @@ def SendRequest_addEmojiList(emoji_url_list_str):
     req.set_header('content-type','application/x-www-form-urlencoded')
     req.send()
 
+##定義請求:新增組合表符
+def SendRequest_addCombindEmoji(ev):
 
+    #定義動作:複製組合表符網址
+    def doCopyCombindEmojiUrl(ev):
+        CopyTextToClipborad(ev.currentTarget.combind_url)
+        alert(f"複製成功")
+
+    #定義完成時，顯示該組合表符中的表符列表的標籤Table
+    def OnComplete_addCombindEmoji(res):
+        #新增成功時
+        if res.status==200 or res.status==0:
+            emoji_url_set=json.loads(res.text)
+            emoji_url_list_str=",".join(emoji_url_set)
+            #顯示(或者新增)各表符的列表，以便新增表符標籤，其中不要清空之前的顯示組合表符結果
+            SendRequest_addEmojiList(emoji_url_list_str,do_clean_previous_area=False)
+            #讓新增新增組合表符的按鍵變成複製表符功能，並恢復按鍵作用
+            doc['btn_add_combind_emoji'].text="複製組合表符網址"
+            doc['btn_add_combind_emoji'].disabled=False
+            doc['btn_add_combind_emoji'].unbind("click")
+            doc['btn_add_combind_emoji'].bind("click",doCopyCombindEmojiUrl)
+        #未接收到訊息或錯誤時
+        else:
+            doc["div_show_adding_emoji_result_table_area"].html = "error "+res.text
+
+    #獲取組合表符網址
+    btn_add_combind_emoji_elt=ev.currentTarget
+    combind_url=btn_add_combind_emoji_elt.combind_url
+
+    #轉換斷行符號為「|」符號(確保正確傳送資料)
+    combind_url_with_vertical=combind_url.replace("\n","|")
+    
+    #傳送請求
+    url=f'/PlurkEmojiHouse/AddCombindEmoji?combind_url={combind_url_with_vertical}'
+    req = ajax.ajax()
+    req.bind('complete',OnComplete_addCombindEmoji)
+    req.open('GET',url,True)
+    req.set_header('content-type','application/x-www-form-urlencoded')
+    req.send()
+
+    #讓新增新增組合表符的按鍵顯示等待提示，並暫停按鍵作用
+    doc['btn_add_combind_emoji'].text="新增中..."
+    doc['btn_add_combind_emoji'].disabled=True
+
+
+#定義請求:刪除組合表符
+def SendRequest_DeleteCombindEmoji(combind_url,btn_delete_combind_emoji_elt):
+
+    #轉換斷行符號為「|」符號(確保正確傳送資料)
+    combind_url_with_vertical=combind_url.replace("\n","|")
+
+    #定義完成刪除組合表符時，跳出提示並刪除對應TR元素
+    def OnComplete_DeleteCombindEmoji(res):
+        #完成搜尋時
+        if res.status==200 or res.status==0:
+            alert("刪除成功")
+            tr_combind_emoji_elt=ParentElt(btn_delete_combind_emoji_elt,"TR")
+            tr_combind_emoji_elt.remove()
+            doc['btn_back'].do_delete_combind_url_list.append(combind_url_with_vertical)###
+        else:
+            pass
+
+    #傳送請求
+    url=f'/PlurkEmojiHouse/DeleteCombindEmoji?combind_url={combind_url_with_vertical}'
+    req = ajax.ajax()
+    req.bind('complete',OnComplete_DeleteCombindEmoji)
+    req.open('GET',url,True)
+    req.set_header('content-type','application/x-www-form-urlencoded')
+    req.send()
+
+#定義請求:搜尋組合表符
+def SendRequest_SearchCombindEmoji(emoji_url,combind_emoji_btn_elt):
+
+    #定義完成搜尋組合表符時，將組表符icon染色
+    def OnComplete_SearchCombindEmoji(res):
+        #完成搜尋時
+        if res.status==200 or res.status==0:
+            combind_url_list=json.loads(res.text)
+            if combind_url_list:
+                combind_emoji_btn_elt.classList.add("has_combind_emoji")
+                combind_emoji_btn_elt.combind_url_list=combind_url_list
+            else:
+                pass
+
+    #傳送請求
+    url=f'/PlurkEmojiHouse/SearchCombindEmoji?emoji_url={emoji_url}'
+    req = ajax.ajax()
+    req.bind('complete',OnComplete_SearchCombindEmoji)
+    req.open('GET',url,True)
+    req.set_header('content-type','application/x-www-form-urlencoded')
+    req.send()
 
 
 

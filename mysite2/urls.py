@@ -35,6 +35,8 @@ urlpatterns = [
     url(r'^PlurkEmojiHouse/NumOfEmoji_and_NumOfTag',NumOfEmoji_and_NumOfTag),
     url(r'^PlurkEmojiHouse/numOfEmojiPageBtn',numOfEmojiPageBtn),
     url(r'^PlurkEmojiHouse/emoji_list_add_tag',emoji_list_add_tag),
-    
+    url(r'^PlurkEmojiHouse/AddCombindEmoji',AddCombindEmoji),
+    url(r'^PlurkEmojiHouse/SearchCombindEmoji',SearchCombindEmoji),
+    url(r'^PlurkEmojiHouse/DeleteCombindEmoji',DeleteCombindEmoji),
     
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
