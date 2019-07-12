@@ -6,7 +6,7 @@ python manage.py runserver 0.0.0.0:8000
 #更新上傳指令
 cd "C:\Users\pappl\Google Drive\mysite2"
 git add .
-git commit -m "1.4.0-2"
+git commit -m "1.4.0-3"
 git push heroku master
 git push -u origin master
 
