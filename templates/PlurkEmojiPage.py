@@ -484,7 +484,7 @@ def DIV_subpage_addEmoji():
                         btn_add_combind_emoji_elt.bind("click",SendRequest_addCombindEmoji)
 
                         #設置刷新組合表符圖片預覽按鈕
-                        btn_reload_combind_emoji_elt=BUTTON("刷新",id="btn_reload_combind_emoji",style={"margin":"10px 0px 15px 8px"})
+                        btn_reload_combind_emoji_elt=BUTTON("重載圖片",id="btn_reload_combind_emoji",style={"margin":"10px 0px 15px 8px"})
                         btn_reload_combind_emoji_elt.bind("click",ReloadCombindEmoji)
 
 
@@ -522,7 +522,6 @@ def DIV_subpage_addEmoji():
         div_elt=DIV(
             Class="adding_emoji_input_area hidden",
             id="div_input_combind_emoji_urls",
-            style={"float":"left"},
         )
 
         #定義動作:點擊輸入表符組合textarea時，清空預設value
@@ -588,6 +587,10 @@ def DIV_subpage_addEmoji():
     )
     return div_elt
 AddStyle('''
+    #div_input_combind_emoji_urls{
+        width: 100%;
+        float: left;
+    }
     a {
         color:#0064ff;
     }
@@ -637,7 +640,7 @@ AddStyle('''
         margin-right:5px !important;
     }
     #textarea_input_combind_emoji_urls{
-        width:900px;
+        width:100%;
         overflow: scroll;
         height: 150px;
         white-space: nowrap;

@@ -532,7 +532,7 @@ def DIV_CombindEmojiTable(combind_url_list,emoji_url):
         btn_copy_combind_emoji_elt.bind("click",doCopyCombindEnoji)
         
         #設置刷新組合表符圖片預覽按鈕
-        btn_reload_combind_emoji_elt=BUTTON("刷新",id="btn_reload_combind_emoji",style={"margin":"10px 0px 15px 8px"})
+        btn_reload_combind_emoji_elt=BUTTON("重載圖片",id="btn_reload_combind_emoji",style={"margin":"10px 0px 15px 8px"})
         btn_reload_combind_emoji_elt.bind("click",ReloadCombindEmoji)
 
         btn_delete_combind_emoji_elt=BUTTON("刪除",id="btn_delete_combind_emoji",style={"margin":"10px 0px 15px 8px"})
