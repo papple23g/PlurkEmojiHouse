@@ -6,7 +6,7 @@ python manage.py runserver 0.0.0.0:8000
 #更新上傳指令
 cd "C:\Users\pappl\Google Drive\mysite2"
 git add .
-git commit -m "1.4.0"
+git commit -m "1.4.0-2"
 git push heroku master
 git push -u origin master
 
@@ -85,6 +85,9 @@ def DIV_bars():
     div_elt<=DIV_ButtonBar("關於作者",id="button_bar_about_author").bind("click",onClick_bar)
     #設定bar被按下時的樣式
     AddStyle("""
+        #button_bar_add_emoji{
+            color: yellow;
+        }
         .AButton_bar_actived{
             background-color:gray;
         }
@@ -93,9 +96,6 @@ def DIV_bars():
             font-family: 微軟正黑體;
             position: relative;
             z-index: 10;
-        }
-        #其他作品, #關於作者{
-            margin: 50px 35px;
         }
     """)
 
@@ -322,7 +322,7 @@ def DIV_subpage_addEmoji():
     select_elt<=OPTION("表符圖片網址")
     select_elt<=OPTION("公開噗文網址")
     select_elt<=OPTION("噗文網頁原始碼")
-    select_elt<=OPTION("組合表符")
+    select_elt<=OPTION("組合表符",style={"color":"blue","background-color":"#ffff0087"})
     select_elt.bind("change",ChangeAddingEmojiMethod)
  
     #定義綁定按下Enter送出新增表符
@@ -511,7 +511,7 @@ def DIV_subpage_addEmoji():
         def DIV_description():
             div_elt=DIV()
             div_elt<=PRE(
-                "輸入組合表符網址格式，例如:\n*[表符一]**[表符二]*\n*[表符三]**[表符四]*",
+                "輸入組合表符網址格式，例如:\n*[表符一]**[表符二]*\n*[表符三]**[表符四]*\n(該格式的組合表符貼在噗浪上不會產生空隙)",
                 style={
                     "margin-top":"0px",
                     "font-size":"10px",
@@ -568,7 +568,7 @@ def DIV_subpage_addEmoji():
 
 
     #排版
-    div_card_elt<=SPAN("選擇輸入 ")+select_elt+BR()
+    div_card_elt<=SPAN("選擇輸入 ")+select_elt+SPAN("new",style={"color":"red","font-size":"10px"})+BR()
     div_card_elt<=DIV_input_emoji_url_to_add_emoji()
     div_card_elt<=DIV_input_plurk_url_to_add_emoji()
     div_card_elt<=DIV_input_html_to_add_emoji()
