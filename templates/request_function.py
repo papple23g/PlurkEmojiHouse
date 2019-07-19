@@ -259,11 +259,11 @@ def SendRequest_addEmoji(ev):
     #定義等待新增表符時的動作
     def OnLoading_addEmoji(res):
         #顯示訊息:新增表符中
-        doc['adding_emoji_msg'].classList.toggle("hidden")
+        doc['adding_emoji_msg'].classList.remove("hidden")
     #定義完成新增表符後動作
     def OnComplete_addEmoji(res):
         #關閉訊息:新增表符中
-        doc['adding_emoji_msg'].classList.toggle("hidden")
+        doc['adding_emoji_msg'].classList.add("hidden")
         #有接收到訊息
         if res.status==200 or res.status==0:
             #回傳失敗時
@@ -277,8 +277,9 @@ def SendRequest_addEmoji(ev):
         else:
             doc["div_show_adding_emoji_result_table_area"].html = "error "+res.text
 
+    #定義動作:顯示錯誤提示-非法網址
     def ShowEmojiUrlErrorMsg():
-        doc['incorrect_emoji_url_msg'].classList.toggle("hidden")
+        doc['incorrect_emoji_url_msg'].classList.remove("hidden")
 
     #若為輸入單一表符圖片網址
     if input_elt.id=="input_input_emoji_url_to_add_emoji_elt":
@@ -319,11 +320,11 @@ def SendRequest_PlurkUrlToHtml(plurk_url):
     #定義等待新增表符時的動作
     def OnLoading_PlurkUrlToHtml(res):
         #顯示訊息:新增表符中
-        doc['adding_emoji_msg'].classList.toggle("hidden")
+        doc['adding_emoji_msg'].classList.remove("hidden")
     #定義完成時新增表符時的動作
     def OnComplete_PlurkUrlToHtml(res):
         #關閉訊息:新增表符中
-        doc['adding_emoji_msg'].classList.toggle("hidden")
+        doc['adding_emoji_msg'].classList.add("hidden")
         if res.text=="":
             return
         #有接收到訊息
@@ -352,12 +353,12 @@ def SendRequest_PlurkUrlToHtml(plurk_url):
 #定義動作:全選，選取尚未選取的html表符
 def SelectAllHtmlEmoji(ev):
     for unselected_htmlEmoji_elt in [elt for elt in doc['html_emoji_container'].select('div.html_emoji') if ('selected_html_emoji' not in elt.className)]:
-        unselected_htmlEmoji_elt.classList.toggle("selected_html_emoji")
+        unselected_htmlEmoji_elt.classList.add("selected_html_emoji")
 
 #定義動作:取消全選，取消選取已經選取的html表符
 def UnselectAllHtmlEmoji(ev):
     for selected_htmlEmoji_elt in doc['html_emoji_container'].select('.selected_html_emoji'):
-        selected_htmlEmoji_elt.classList.toggle("selected_html_emoji")
+        selected_htmlEmoji_elt.classList.remove("selected_html_emoji")
 
 def SendConfirmSelectedHtmlEmojiToAdd(ev):
     selected_imgHtmlEmoji_elt_list=doc['html_emoji_container'].select('.selected_html_emoji img')
@@ -518,11 +519,11 @@ def SendRequest_addEmojiList(emoji_url_list_str,do_clean_previous_area=True):
     #定義等待新增表符時的動作
     def OnLoading_addEmojiList(res):
         #顯示訊息:新增表符中
-        doc['adding_emoji_msg'].classList.toggle("hidden")
+        doc['adding_emoji_msg'].classList.remove("hidden")
     #定義完成時新增表符時的動作
     def OnComplete_addEmojiList(res):
         #關閉訊息:新增表符中
-        doc['adding_emoji_msg'].classList.toggle("hidden")
+        doc['adding_emoji_msg'].classList.add("hidden")
         #有接收到訊息
         if res.status==200 or res.status==0:
             #回傳失敗時
@@ -640,3 +641,38 @@ def SendRequest_SearchCombindEmoji(emoji_url,combind_emoji_btn_elt):
 
 
 
+
+
+#定義Firebase請求:讀取瀏覽人數資料並且顯示出來
+def ShowAndUpdateWebSiteViews():
+
+    #定義動作:顯示瀏覽人數至本站Header
+    def ShowWebSiteViews(webSiteViews):
+        doc['span_website_views'].text=f'{webSiteViews:,}'
+
+    #定義Firebase請求:更新瀏覽人數資料
+    def UpdateWebSiteViews(data_dict,path):
+        database_ref=database.ref(path)
+        database_ref.update(data_dict)
+        print("已新增:")##
+        log(data_dict)##
+
+    path="PlurkEmojiHouse"
+    #定義完成讀取後的動作
+    def gotData(data):
+        data_dict=JSObject_to_PythonDict(data.toJSON())
+        webSiteViews=data_dict['WebSiteViews']
+        print(webSiteViews)
+        #增加瀏覽量並更新瀏覽人數資料
+        webSiteViews+=1
+        data_dict['WebSiteViews']=webSiteViews
+        UpdateWebSiteViews(data_dict,path)
+        #顯示瀏覽人數至本站Header
+        ShowWebSiteViews(webSiteViews)
+    #定義完成讀取後的動作
+    def errData(err):
+        log("ERROR!")
+        log(err)
+
+    database_ref=database.ref(path)
+    database_ref.once("value",gotData,errData)

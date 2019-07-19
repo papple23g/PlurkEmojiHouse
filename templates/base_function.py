@@ -7,7 +7,12 @@ from browser.html import *
 import json
 import copy
 
+#引渡Javascript印出資料log語法
+log=window.console.log
 
+#引渡Javascript物件:firebase.database
+firebase=window.firebase
+database=firebase.database()
 
 #定義動作:複製文字 #不需要建立外部額外元素
 def CopyTextToClipborad(string):
@@ -161,3 +166,14 @@ def JumpToSearchEmoji(input_value):
     doc['button_bar_search_emoji'].click()
     doc['search_tag'].value=input_value
     doc['search_tag_btn'].click()
+
+#定義函數:轉換json為python的dict (for Firebase)
+def JSObject_to_PythonDict(json_obj):
+    new_dict = {}
+    for key in dir(json_obj):
+        value = json_obj[key]
+        if isinstance(value, str) or isinstance(value, int) or isinstance(value, float) or isinstance(value, list) or isinstance(value, dict) or isinstance(value, tuple) or isinstance(value, set):
+            new_dict[key] = value
+        else:
+            new_dict[key] = JSObject_to_PythonDict(value)
+    return new_dict

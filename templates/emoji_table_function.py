@@ -475,7 +475,7 @@ def DIV_CombindEmojiTable(combind_url_list,emoji_url):
     #定義動作:刷新組合表符預覽圖片
     def ReloadCombindEmoji(ev):
         for img_emoji_elt in ev.currentTarget.parent.select('img'):
-            img_emoji_elt.src+='?'
+            img_emoji_elt.src=img_emoji_elt.src
     
     #定義動作:複製組合表符網址
     def doCopyCombindEnoji(ev):

@@ -33,7 +33,14 @@ def DIV_header():
                     ,style={
                         "font-family":"微軟正黑體"
                     }))
+    span_viewsInfo_elt=SPAN(
+        "瀏覽人數: "+SPAN("",id="span_website_views"),
+        style={
+            "float":"right",
+        },
+    )
     div_elt<=H1_title_elt
+    div_elt<=span_viewsInfo_elt
     return div_elt
 AddStyle('''
     #here{
@@ -306,16 +313,16 @@ def DIV_subpage_addEmoji():
     def ChangeAddingEmojiMethod(ev):
         #獲取更換前的新增表符DIV元素，並將其隱藏
         div_jump_off_elt=[div for div in doc['div_adding_emoji_input_area_elt'].select(".adding_emoji_input_area") if ("hidden" not in div.classList)][0]
-        div_jump_off_elt.classList.toggle("hidden")
+        div_jump_off_elt.classList.add("hidden")
         #獲取指定更換的新增表符DIV元素，並將其顯現
         if ev.currentTarget.value=="表符圖片網址":
-            doc['div_input_emoji_url_to_add_emoji_elt'].classList.toggle("hidden")
+            doc['div_input_emoji_url_to_add_emoji_elt'].classList.remove("hidden")
         elif ev.currentTarget.value=="公開噗文網址":
-            doc['div_input_plurk_url_to_add_emoji_elt'].classList.toggle("hidden")
+            doc['div_input_plurk_url_to_add_emoji_elt'].classList.remove("hidden")
         elif ev.currentTarget.value=="噗文網頁原始碼":
-            doc['div_input_html_to_add_emoji_elt'].classList.toggle("hidden")
+            doc['div_input_html_to_add_emoji_elt'].classList.remove("hidden")
         elif ev.currentTarget.value=="組合表符":
-            doc['div_input_combind_emoji_urls'].classList.toggle("hidden")
+            doc['div_input_combind_emoji_urls'].classList.remove("hidden")
 
 
     select_elt=SELECT(id="select_adding_emoji_method",style={"margin-bottom":"15px"})
@@ -418,7 +425,7 @@ def DIV_subpage_addEmoji():
         #定義動作:刷新組合表符預覽圖片
         def ReloadCombindEmoji(ev):
             for img_emoji_elt in doc['div_combind_emoji'].select('img'):
-                img_emoji_elt.src+='?'
+                img_emoji_elt.src=img_emoji_elt.src
 
         #定義動作:分析組合表符網址
         def AnalyzeCombineEmojiUrls(ev):
@@ -652,7 +659,6 @@ def DIV_subpage_updateDiary():
     div_elt=DIV(id="更新日誌",Class="subpage",style={"display":"none"})
     div_elt<=DIV(IFRAME(src="https://docs.google.com/document/d/e/2PACX-1vT0Z3y-e_t7ZIWRjcfOr-0f22uHqQLTDwrtNCeaPJNoI78KyviNLREvLV-eVId9MezNuRlqk2hCsHdI/pub?embedded=true"),id="warp_iframe")
     return div_elt
-
 AddStyle('''
     #更新日誌 #warp_iframe{
         overflow: hidden;
@@ -668,7 +674,7 @@ AddStyle('''
     }
 ''')
 
-
+#定義子頁面:其他作品
 def DIV_otherProduction():
     div_elt=DIV(id="其他作品",Class="subpage",style={"display":"none"})
     div_elt<=H4("【網站工具】")
@@ -693,7 +699,6 @@ def DIV_otherProduction():
         Class="youtube_playlist_container"
     )
     return div_elt
-
 AddStyle('''
     img#ahktool_site_icon:hover {
         box-shadow: orange 0px 0px 10px 2px;
@@ -728,6 +733,7 @@ AddStyle('''
     }
 ''')
 
+#定義子頁面:關於作者
 def DIV_about_author():
     div_elt=DIV(id="關於作者",Class="subpage",style={"display":"none"})
     div_elt<=P("● 作者信箱")
@@ -742,8 +748,6 @@ def DIV_about_author():
     )
     return div_elt
 
-
-
 #排版:置入DIV網頁header區塊
 doc<=DIV_header()
 doc<=DIV_bars()
@@ -756,3 +760,6 @@ doc<=DIV_about_author()
 
 #進入前直接顯示全部表符
 doc['show_all_emoji_btn'].click()
+
+#讀取Firebase瀏覽人數資料並且顯示出來
+ShowAndUpdateWebSiteViews()
