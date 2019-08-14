@@ -118,9 +118,9 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
         #若該表符已經有組合表符，則戰時切換至組合表符結果頁面
         else:
             #隱藏表符TABLE頁面、頁籤DIV元素、標籤搜尋結果區塊DIV元素
-            doc['table_emoji_result'].classList.toggle("hidden")
-            doc['emoji_page_btns'].classList.toggle("hidden")
-            doc['search_tag_result'].classList.toggle("hidden")
+            doc['table_emoji_result'].classList.add("hidden")
+            doc['emoji_page_btns'].classList.add("hidden")
+            doc['search_tag_result'].classList.add("hidden")
             #置入組合表符結果頁面DIV_TABLE元素
             doc['emoji_result_table']<=DIV_CombindEmojiTable(combind_emoji_btn_elt.combind_url_list,combind_emoji_btn_elt.emoji_url)
 
@@ -215,8 +215,8 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
             #生成標籤列表純文字(以","間隔)
             tag_list_with_comma_str=", ".join([span_tags_elt.text for span_tags_elt in span_tags_elt_list])
             #隱藏標籤列表DIV區塊、顯示標籤純文字區塊
-            div_span_tag_list_elt.classList.toggle("hidden")
-            div_tag_list_with_comma_str_area.classList.toggle("hidden")
+            div_span_tag_list_elt.classList.add("hidden")
+            div_tag_list_with_comma_str_area.classList.add("hidden")
             #置入(顯示)標籤列表純文字
             div_tag_list_with_comma_str_area.innerHTML=tag_list_with_comma_str
         
@@ -453,9 +453,9 @@ def DIV_CombindEmojiTable(combind_url_list,emoji_url):
         #清除自組合表符頁面
         doc['div_combind_emoji_table'].remove()
         #顯示表符TABLE頁面、頁籤DIV元素、標籤搜尋結果區塊DIV元素
-        doc['table_emoji_result'].classList.toggle("hidden")
-        doc['emoji_page_btns'].classList.toggle("hidden")
-        doc['search_tag_result'].classList.toggle("hidden")
+        doc['table_emoji_result'].classList.remove("hidden")
+        doc['emoji_page_btns'].classList.remove("hidden")
+        doc['search_tag_result'].classList.remove("hidden")
         doc<=A(
             id="a_led_to_emoji_tr",
             href=f"#{EmojiUrlId(btn_back_elt.emoji_url)}"

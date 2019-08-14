@@ -49,7 +49,6 @@ def AddStyle(style_str):
 def ParentElt(elt,parent_tagName):
     while (elt.tagName!=parent_tagName):
         elt=elt.parent
-        
     return elt
 
 #定義動作:將元素設定為游標在上方可顯示文字(預設:黑底白字,滑鼠覆蓋才顯示文字)

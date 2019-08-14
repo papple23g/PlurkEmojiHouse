@@ -1,12 +1,13 @@
 """
 #啟動測試指令
+cd "C:\Users\Peter Wang\Google Drive\mysite2"
 cd "C:\Users\pappl\Google Drive\mysite2"
-python manage.py runserver 0.0.0.0:8000
+python2 manage.py runserver 0.0.0.0:8001
 
 #更新上傳指令
 cd "C:\Users\pappl\Google Drive\mysite2"
 git add .
-git commit -m "1.4.0-3"
+git commit -m "1.4.1"
 git push heroku master
 git push -u origin master
 
