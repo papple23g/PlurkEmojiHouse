@@ -223,7 +223,7 @@ def SendRequest_addTag(ev):
 #定義送出請求動作:新增表符
 def SendRequest_collectEmoji(ev,user_uid):
     #完成送出時的動作
-    def OnComplete_addTag(res):
+    def OnComplete_collectEmoji(res):
         alert("收藏成功!")
 
     #獲取當列IMG表符元素的id
@@ -231,8 +231,24 @@ def SendRequest_collectEmoji(ev,user_uid):
     collect_tag=f"__collectorUsers__{user_uid}"
     
     req = ajax.ajax()
-    req.bind('complete',OnComplete_addTag)
+    req.bind('complete',OnComplete_collectEmoji)
     url=f'/PlurkEmojiHouse/emoji_add_tag?id={emoji_id}&add_tag_str={collect_tag}'
+    req.open('GET',url,True)
+    req.set_header('content-type','application/x-www-form-urlencoded')
+    req.send()
+
+def SendRequest_removeCollectEmoji(ev,user_uid):
+    #完成送出時的動作
+    def OnComplete_removeCollectEmoji(res):
+        alert("已移除收藏!")
+
+    #獲取當列IMG表符元素的id
+    emoji_id=int(ev.currentTarget.emoji_id)
+    collect_tag=f"__collectorUsers__{user_uid}"
+    
+    req = ajax.ajax()
+    req.bind('complete',OnComplete_removeCollectEmoji)
+    url=f'/PlurkEmojiHouse/delete_tag?emoji_id={emoji_id}&tag_name={collect_tag}'
     req.open('GET',url,True)
     req.set_header('content-type','application/x-www-form-urlencoded')
     req.send()

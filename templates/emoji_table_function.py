@@ -141,11 +141,11 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
                     collect_emoji_btn_elt.classList.add("be_collected")
                     #送出收藏表符的請求
                     SendRequest_collectEmoji(ev,user_uid)
-                ###若表符已經被收藏，就移除收藏並調暗愛心按鈕
+                #若表符已經被收藏，就移除收藏並調暗愛心按鈕
                 else:
                     #調暗愛心按鈕
                     collect_emoji_btn_elt.classList.remove("be_collected")
-                    alert(f"user {user_uid} remove emoji {emoji_id}")
+                    SendRequest_removeCollectEmoji(ev,user_uid)
             
             #若使用者尚未登入
             else:
