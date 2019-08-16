@@ -21,7 +21,7 @@ heroku run python manage.py collectstatic(可選，如果有新增static的檔�
 """
 
 #全域函數:版本號
-VERSION="2.0.0"
+VERSION="2.0"
 
 #更改網頁標題
 doc.select("head title")[0].text+=f" {VERSION}"
