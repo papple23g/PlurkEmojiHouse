@@ -181,7 +181,8 @@ AddStyle('''
 def DIV_subpage_searchEmoji():
     div_elt=DIV(id="搜尋表符",Class="subpage",style={"display":"block"})
     div_card_elt=DIV(Class="div_input_card")
-    div_card_elt<=BR()
+    div_block_elt=DIV(Class="div_input_block",style={"float":"left"})
+    div_block_elt<=BR()
     #定義[搜尋表符標籤文字框]按下Enter送出
     def pressEnterToSend(ev):
         #在ev有附加屬性key時才執行(避免出現錯誤)
@@ -201,7 +202,7 @@ def DIV_subpage_searchEmoji():
                                     ,hide_ev_list=["keydown"
                                                   ,"focusout"]
                                     ,width="180px")
-    div_card_elt<=input_text_elt
+    div_block_elt<=input_text_elt
     #設定搜尋框CSS樣式
     AddStyle("""
         #div_search_tag {
@@ -238,16 +239,17 @@ def DIV_subpage_searchEmoji():
     """)
 
     #設置搜尋表符按鈕
-    div_card_elt<=BUTTON("搜尋"
+    div_block_elt<=BUTTON("搜尋"
                         ,id="search_tag_btn"
                         ,style={"margin-bottom":"7px"}
                         ).bind("click",SendRequest_searchEmoji)
     #設置顯示全部按鈕
-    div_card_elt<=BUTTON("顯示全部"
+    div_block_elt<=BUTTON("顯示全部"
                         ,id="show_all_emoji_btn"
                         ,style={"margin-left":"7px"}
                         ).bind("click",SendRequest_searchEmoji)
-    div_elt<=div_card_elt
+
+    div_card_elt<=div_block_elt
 
     #設置表符搜尋結果DIV_TABLE
     div_emoji_result_table=DIV(
@@ -270,7 +272,13 @@ def DIV_subpage_searchEmoji():
             mouseover_ev = window.MouseEvent.new("click")
             icon_description_elt=doc['div_description'].select('.fa-question-circle')[0]
             icon_description_elt.dispatchEvent(mouseover_ev)
-        div_elt=DIV(style={"float":"right"},id="div_description")
+        div_elt=DIV(
+            id="div_description",
+            style={
+                "float":"right",
+                "margin-top":"29px",
+            }
+        )
         div_elt<=DIV_showTipText(
             I(Class="far fa-question-circle")+"說明",
             '使用步驟說明:'+BR()
@@ -282,6 +290,25 @@ def DIV_subpage_searchEmoji():
         return div_elt
 
     div_card_elt<=DIV_description()
+
+    #設置顯示我的收藏A_INPUTCheckbox勾選元素
+    div_showCollectEmojis_inputCheckbox=DIV(
+        A_INPUTCheckbox(" 顯示我的收藏",id="checkbox_showCollectEmojis"),
+        style={
+            "clear":"both",
+            "margin-left":"4px",
+            "margin-top":"67px",
+        }
+    )
+    #綁定勾選元素變動時，會自動按下搜尋(自動刷新)，並交由後續判斷是否要搜尋已收藏的表符
+    ###非登入者無法勾選
+    checkbox_showCollectEmojis_elt=div_showCollectEmojis_inputCheckbox.select('input')[0]
+    checkbox_showCollectEmojis_elt.bind("change",lambda ev:doc['search_tag_btn'].click())
+
+
+    #排版
+    div_card_elt<=div_showCollectEmojis_inputCheckbox
+    div_elt<=div_card_elt
 
     #--排版--#
     #置入搜尋標籤結果DIV

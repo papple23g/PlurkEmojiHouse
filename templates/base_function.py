@@ -176,3 +176,23 @@ def JSObject_to_PythonDict(json_obj):
         else:
             new_dict[key] = JSObject_to_PythonDict(value)
     return new_dict
+
+#定義含文字勾選元素A_INPUTCheckbox，點擊文字也可進行勾選
+#attr_dict可設定設置inputCheckbox勾選元素的附帶變數
+def A_INPUTCheckbox(item_name,checked=False,attr_dict={"symbol":""},Class=None,id=None):
+    #定義SPAN文字被勾選時動作:勾選前方的checkbox
+    def do_ckecking(ev):
+        if ev.target.tagName!="INPUT":
+            input_ckeckbox_elt=ev.currentTarget.select("input")[0]
+            input_ckeckbox_elt.click()
+    #設置inputCheckbox勾選元素，並選擇性加上Class
+
+    inputCheckbox_elt=INPUT(type="checkbox",checked=checked)
+    if Class:
+        inputCheckbox_elt.className=Class
+    if id:
+        inputCheckbox_elt.id=id
+    if attr_dict:
+        for k,v in attr_dict.items():
+            setattr(inputCheckbox_elt,k,v)
+    return SPAN(inputCheckbox_elt+SPAN(item_name),style={"cursor":"pointer"}).bind('click',do_ckecking)

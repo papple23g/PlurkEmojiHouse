@@ -76,14 +76,16 @@ def SendRequest_searchEmoji(ev):
             if request_type=="search or add emoji by input url":
                 doc['search_tag'].value=""
 
-    #搜尋表符請求處理
-    # - 若為表符網址，則設定url為搜尋或新增表符
+    #若為表符網址，則設定url為搜尋或新增表符
     if "s.plurk.com" in search_tag_str:
         request_type="search or add emoji by input url"
         emoji_url=Correcting_emojiUrl(search_tag_str)
     
     #獲取使用者uid (若尚未登入則為None)
     user_uid=window.firebase.auth().currentUser.uid if window.firebase.auth().currentUser else None
+
+    if user_uid and doc['checkbox_showCollectEmojis'].checked:
+        search_tag_str+=f",__collectorUsers__{user_uid}"
 
     #根據不同搜尋方式設定request
     if request_type=="search or add emoji by input url":
@@ -224,7 +226,8 @@ def SendRequest_addTag(ev):
 def SendRequest_collectEmoji(ev,user_uid):
     #完成送出時的動作
     def OnComplete_collectEmoji(res):
-        alert("收藏成功!")
+        #alert("收藏成功!")
+        pass
 
     #獲取當列IMG表符元素的id
     emoji_id=int(ev.currentTarget.emoji_id)
@@ -240,7 +243,8 @@ def SendRequest_collectEmoji(ev,user_uid):
 def SendRequest_removeCollectEmoji(ev,user_uid):
     #完成送出時的動作
     def OnComplete_removeCollectEmoji(res):
-        alert("已移除收藏!")
+        #alert("已移除收藏!")
+        pass
 
     #獲取當列IMG表符元素的id
     emoji_id=int(ev.currentTarget.emoji_id)
@@ -643,7 +647,7 @@ def SendRequest_DeleteCombindEmoji(combind_url,btn_delete_combind_emoji_elt):
             alert("刪除成功")
             tr_combind_emoji_elt=ParentElt(btn_delete_combind_emoji_elt,"TR")
             tr_combind_emoji_elt.remove()
-            doc['btn_back'].do_delete_combind_url_list.append(combind_url_with_vertical)###
+            doc['btn_back'].do_delete_combind_url_list.append(combind_url_with_vertical)
         else:
             pass
 

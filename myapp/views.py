@@ -32,13 +32,13 @@ from django.forms.models import model_to_dict
 import json
 
 #定義動作，將QuerySet形式的表符串列轉化成字典串列，一個字典的key包含id,url,tags，其中tags內的標籤之間用逗號區隔
+#會根據user_uid過濾tags : 去除含有收藏標籤開頭(__collectorUsers__)的標籤，但將符合user_uid的收藏標籤則轉為"__be_collected__"標籤，讓前端去處理
 def EmojiDictList(Emoji_list,user_uid=None):
     Emoji_dict_list=[]
     if user_uid:
         for emoji in Emoji_list:
             Emoji_dict=model_to_dict(emoji)
-            ##...
-            emoji_tags_names_filtered_list=[tag_name.replace("__collectorUsers__"+user_uid,"be_collected") for tag_name in emoji.tags.names() if (tag_name=="__collectorUsers__"+user_uid or (not tag_name.startswith("__collectorUsers__")))]
+            emoji_tags_names_filtered_list=[tag_name.replace("__collectorUsers__"+user_uid,"__be_collected__") for tag_name in emoji.tags.names() if (tag_name=="__collectorUsers__"+user_uid or (not tag_name.startswith("__collectorUsers__")))]
             Emoji_dict["tags"]=','.join(emoji_tags_names_filtered_list)
             Emoji_dict_list.append(Emoji_dict)
     else:
@@ -86,9 +86,12 @@ def numOfEmojiPageBtn(request):
         num_of_btn=(Emoji.objects.count()-1)/num_of_emoji_per_page +1
     #若表符列表不為空字串，則計算搜尋結果全部表符需要幾頁
     else:
-        search_tag_list=search_tag.split(",")
-        exec('Emoji_list=Emoji.objects'+''.join(['.filter(tags__name__in=[u"'+tag+'"])' for tag in search_tag_list])+'.order_by("-id")')
+         #區分逗號","分出多個標籤
+        search_tag_list=[tag.strip() for tag in search_tag.split(",") if tag!=""]
+        #進行集合篩選
+        exec('Emoji_list=Emoji.objects'+''.join(['.filter(tags__name__in=[u"'+searth_tag_i_str+'"])' for searth_tag_i_str in search_tag_list])+'.order_by("-id")')
         num_of_btn=(len(Emoji_list)-1)/num_of_emoji_per_page +1
+        #print('num_of_btn:',num_of_btn)
     return HttpResponse(num_of_btn)
     
     

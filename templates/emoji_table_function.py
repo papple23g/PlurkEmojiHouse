@@ -340,7 +340,7 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
     div_span_tag_list=DIV(Class="div_span_tag_list")
     for tag_str in tag_str_list.split(","):
         #若tag中含有已被使用者收藏的標記...
-        if tag_str=="be_collected":
+        if tag_str=="__be_collected__":
             be_collected=True
         #若表符不為空
         elif tag_str!="":
@@ -541,7 +541,7 @@ def DIV_CombindEmojiTable(combind_url_list,emoji_url):
     div_elt<=IMG(src=emoji_url)+BR()
 
     #設置返回表符TABLE按鈕
-    btn_back_elt=BUTTON("返回",id="btn_back")##,Class="w3-btn w3-ripple w3-green")
+    btn_back_elt=BUTTON("返回",id="btn_back")#,Class="w3-btn w3-ripple w3-green")
     btn_back_elt.emoji_url=emoji_url
     btn_back_elt.do_delete_combind_url_list=[] #紀錄刪除的組合組表，以便將資訊回傳至表符TABLE的組合表符icon元素
     btn_back_elt.bind("click",BackToEmojiTablePage)
