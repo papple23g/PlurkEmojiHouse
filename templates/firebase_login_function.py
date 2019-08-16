@@ -19,7 +19,6 @@ def SingOut(ev):
 	confirm_to_signOut=confirm("確定要登出嗎?")
 	if confirm_to_signOut:
 		firebase.auth().signOut()
-		alert("登出成功!")
 	else:
 		pass
 
@@ -28,20 +27,40 @@ def DIV_login():
 	div_elt=DIV()
 	if window.firebase.auth().currentUser:
 		user=window.firebase.auth().currentUser
-		div_elt<=IMG(src=user.photoURL,style={'width':'30px'})
-		btn_signOut_elt=BUTTON("登出").bind('click',SingOut)
-		div_elt<=btn_signOut_elt
+		div_elt<=IMG(
+			src=user.photoURL,
+			style={
+				'width':'30px',
+				'border-radius':'30px',
+			},
+		)
+		div_elt<=SPAN(" "+user.displayName)
+		div_elt.bind('click',SingOut)
 	else:
 		div_elt<=IMG(src="https://icon-library.net/images/anonymous-icon/anonymous-icon-0.jpg",style={'width':'30px'})
-		div_elt<=BUTTON("G登入").bind('click',lambda ev:login())
+		div_elt<=I(Class="fab fa-google",style={'margin':'0 5px'})
+		div_elt<=SPAN("登入")
+		div_elt.bind('click',lambda ev:login())
 	return div_elt
 
-#定義動作:當載入網站或登入狀態有變動時，就刷新登入DIV元素
+#定義動作:當載入網站或登入狀態有變動時，就刷新登入DIV元素，以及刷新搜尋結果
 def onAuthStateChanged(user):
+    #提示資訊
 	print("AuthStateChanged!")
 	log(user)
+    #刷新登入DIV元素
 	doc['DIV_userLoginInfo'].clear()
 	doc['DIV_userLoginInfo']<=DIV_login()
+	#若為登入動作:顯示顯示我的收藏勾選元素
+	if window.firebase.auth().currentUser:
+		doc['div_showCollectEmojis'].classList.remove("disabled")
+		doc['checkbox_showCollectEmojis'].disabled=False
+	#若為登出動作:關閉顯示我的收藏勾選元素並取消勾選
+	else:
+		doc['div_showCollectEmojis'].classList.add("disabled")
+		doc['checkbox_showCollectEmojis'].disabled=True
+		doc['checkbox_showCollectEmojis'].checked=False
+	#刷新搜尋結果
+	doc['search_tag_btn'].click()
 firebase.auth().onAuthStateChanged(onAuthStateChanged)
-
 

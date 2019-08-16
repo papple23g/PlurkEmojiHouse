@@ -73,8 +73,19 @@ def search_by_tag(request):
     if Emoji_list:
         Emoji_dict_list=EmojiDictList(Emoji_list,user_uid)
         return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
+    #沒有找到結果時
     else:
-        return HttpResponse(u"沒有符合 "+search_tag+" 的搜尋結果")
+        #若已勾選「顯示我的收藏」
+        if "__collectorUsers__" in search_tag:
+            #若是顯示全部收藏的表符但沒有結果
+            if search_tag.startswith(",__collectorUsers__"):
+                return HttpResponse(u"沒有收藏的表符哦!")
+            #若是收藏的表符中找不到標籤結果
+            else:
+                return HttpResponse(u"沒有符合 "+search_tag[:search_tag.index(",__collectorUsers__")]+u" 的搜尋結果")
+        #若未勾選「顯示我的收藏」
+        else:
+            return HttpResponse(u"沒有符合 "+search_tag+u" 的搜尋結果")
 
 #功能函數:輸入標籤，輸出表符結果頁數
 def numOfEmojiPageBtn(request):

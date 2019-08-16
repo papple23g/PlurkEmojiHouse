@@ -103,8 +103,8 @@ def SendRequest_searchEmoji(ev):
     if request_type!="search emoji by click page button":
         SendRequest_insertEmojiPageBtn(search_tag_str)
     
-    #若是輸入標籤搜尋或點擊標籤搜尋，就搜尋相似的標籤 (排除空白關鍵字和辨識使用者是否收藏的標籤)
-    if search_tag_str.strip() and ("__collectorUsers__" not in search_tag_str):
+    #若是輸入標籤搜尋或點擊標籤搜尋，就搜尋相似的標籤 (排除空白關鍵字)
+    if search_tag_str.strip():
         if request_type in ["search emoji by input tag","search emoji by click tag in emoji tag list"]:
             SendRequest_searchTags(search_tag_str)
 
@@ -135,7 +135,7 @@ def SendRequest_searchTags(search_tag_str):
         #根據被標籤次數排序內容:先倆倆綁定，排序，再解除綁定
         ziped_tag_data_list=zip(tag_list,num_of_tagged_list)
         ziped_tag_data_list=sorted(ziped_tag_data_list,key=lambda x:x[1],reverse=True)
-        tag_list,num_of_tagged_list=zip(*ziped_tag_data_list) if ziped_tag_data_list else ([],)
+        tag_list,num_of_tagged_list=zip(*ziped_tag_data_list) if ziped_tag_data_list else ([],[])
         #清除"搜尋標籤中..."訊息
         doc['search_tag_result'].clear()
         #依序置入標籤SPAN

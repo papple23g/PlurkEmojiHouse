@@ -149,7 +149,7 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
             
             #若使用者尚未登入
             else:
-                alert("若要收藏表符，請先登入哦")
+                alert("登入後可使用收藏功能")
 
 
         td_elt=TD(Class="emoji_action_area")

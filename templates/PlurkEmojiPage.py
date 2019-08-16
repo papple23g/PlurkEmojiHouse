@@ -44,8 +44,6 @@ def DIV_header():
     )
     #設置使用者登入訊息DIV元素
     DIV_userLoginInfo_elt=DIV(
-        "使用者登入訊息DIV元素",
-        style={"float":"right"},
         id="DIV_userLoginInfo",
     )
     #設置瀏覽人次區塊DIV元素
@@ -64,6 +62,19 @@ def DIV_header():
     div_elt<=DIV_span_viewsInfo_elt
     return div_elt
 AddStyle('''
+    #DIV_userLoginInfo{
+        position: absolute;
+        background-color: rgb(162, 162, 162);
+        border-radius: 16px;
+        padding: 6px;
+        cursor:pointer;
+        top: 15px;
+        right: 5px;
+    }
+    #DIV_userLoginInfo span{
+        font-family: 微軟正黑體;
+        font-weight: bold;
+    }
     #here{
         height: 100px;
     }
@@ -292,14 +303,23 @@ def DIV_subpage_searchEmoji():
     div_card_elt<=DIV_description()
 
     #設置顯示我的收藏A_INPUTCheckbox勾選元素
+
+    def onclick_div_showCollectEmojis(ev):
+        div_showCollectEmojis=ev.currentTarget
+        if "disabled" in div_showCollectEmojis.classList:
+            alert("登入後可使用收藏功能")
+
     div_showCollectEmojis_inputCheckbox=DIV(
         A_INPUTCheckbox(" 顯示我的收藏",id="checkbox_showCollectEmojis"),
         style={
             "clear":"both",
             "margin-left":"4px",
             "margin-top":"67px",
-        }
-    )
+            "font-weight":"bold",
+            "font-family":"微軟正黑體",
+        },
+        id="div_showCollectEmojis",
+    ).bind("click",onclick_div_showCollectEmojis)
     #綁定勾選元素變動時，會自動按下搜尋(自動刷新)，並交由後續判斷是否要搜尋已收藏的表符
     ###非登入者無法勾選
     checkbox_showCollectEmojis_elt=div_showCollectEmojis_inputCheckbox.select('input')[0]
@@ -322,6 +342,13 @@ def DIV_subpage_searchEmoji():
 
     return div_elt
 AddStyle('''
+    #div_showCollectEmojis.disabled{
+        color: gray;
+        font-style: italic;
+    }
+    .div_input_block button{
+        font-family: 微軟正黑體;
+    }
     .div_emoji_result_table_area{
         width: 90%;
         margin: 20px 0px 0px 20px;
