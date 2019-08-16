@@ -1,6 +1,8 @@
 """
 #啟動測試指令
 cd "C:\Users\Peter Wang\Google Drive\mysite2"
+python2 manage.py runserver 0.0.0.0:8001
+
 cd "C:\Users\pappl\Google Drive\mysite2"
 python2 manage.py runserver 0.0.0.0:8001
 
@@ -30,18 +32,36 @@ doc['loading_webpage_msg'].remove()
 #定義DIV網頁header區塊
 def DIV_header():
     div_elt=DIV(id="div_header",Class="w3-row-padding w3-green")
-    H1_title_elt=H1(B(f"噗浪表符庫 {VERSION}"
-                    ,style={
-                        "font-family":"微軟正黑體"
-                    }))
-    span_viewsInfo_elt=SPAN(
-        "瀏覽人數: "+SPAN("",id="span_website_views"),
-        style={
-            "float":"right",
-        },
+    #設置網頁標頭H1元素
+    H1_title_elt=H1(
+        B(
+            f"噗浪表符庫 {VERSION}"
+            ,style={
+                "font-family":"微軟正黑體"
+            }
+        ),
+        style={"float":"left"},
     )
+    #設置使用者登入訊息DIV元素
+    DIV_userLoginInfo_elt=DIV(
+        "使用者登入訊息DIV元素",
+        style={"float":"right"},
+        id="DIV_userLoginInfo",
+    )
+    #設置瀏覽人次區塊DIV元素
+    DIV_span_viewsInfo_elt=DIV(
+        SPAN(
+            "瀏覽人次: "+SPAN("",id="span_website_views"),
+            style={
+                "float":"right",
+            },
+        ),
+        style={"clear":"both"}
+    )
+    #排版
     div_elt<=H1_title_elt
-    div_elt<=span_viewsInfo_elt
+    div_elt<=DIV_userLoginInfo_elt
+    div_elt<=DIV_span_viewsInfo_elt
     return div_elt
 AddStyle('''
     #here{
@@ -763,4 +783,4 @@ doc<=DIV_about_author()
 doc['show_all_emoji_btn'].click()
 
 #讀取Firebase瀏覽人數資料並且顯示出來
-ShowAndUpdateWebSiteViews()
+#ShowAndUpdateWebSiteViews()

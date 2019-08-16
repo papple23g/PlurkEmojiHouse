@@ -81,13 +81,15 @@ def SendRequest_searchEmoji(ev):
     if "s.plurk.com" in search_tag_str:
         request_type="search or add emoji by input url"
         emoji_url=Correcting_emojiUrl(search_tag_str)
-        
     
+    #獲取使用者uid (若尚未登入則為None)
+    user_uid=window.firebase.auth().currentUser.uid if window.firebase.auth().currentUser else None
+
     #根據不同搜尋方式設定request
     if request_type=="search or add emoji by input url":
-        url=f'/PlurkEmojiHouse/search_by_url?search_url={emoji_url}'
+        url=f'/PlurkEmojiHouse/search_by_url?search_url={emoji_url}&user_uid={user_uid}'
     else:
-        url=f'/PlurkEmojiHouse/search_by_tag?search_tag={search_tag_str}&page={page}'
+        url=f'/PlurkEmojiHouse/search_by_tag?search_tag={search_tag_str}&page={page}&user_uid={user_uid}'
     req = ajax.ajax()
     req.bind('complete',OnComplete_searchEmoji)
     req.bind('loading',OnLoading_searchEmoji)
@@ -99,9 +101,10 @@ def SendRequest_searchEmoji(ev):
     if request_type!="search emoji by click page button":
         SendRequest_insertEmojiPageBtn(search_tag_str)
     
-    #若是輸入標籤搜尋或點擊標籤搜尋，就搜尋相似的標籤
-    if request_type in ["search emoji by input tag","search emoji by click tag in emoji tag list"]:
-        SendRequest_searchTags(search_tag_str)
+    #若是輸入標籤搜尋或點擊標籤搜尋，就搜尋相似的標籤 (排除空白關鍵字和辨識使用者是否收藏的標籤)
+    if search_tag_str.strip() and ("__collectorUsers__" not in search_tag_str):
+        if request_type in ["search emoji by input tag","search emoji by click tag in emoji tag list"]:
+            SendRequest_searchTags(search_tag_str)
 
 #定義請求動作:顯示表符搜尋結果的頁籤按鈕
 def SendRequest_insertEmojiPageBtn(search_tag_str):
@@ -130,7 +133,7 @@ def SendRequest_searchTags(search_tag_str):
         #根據被標籤次數排序內容:先倆倆綁定，排序，再解除綁定
         ziped_tag_data_list=zip(tag_list,num_of_tagged_list)
         ziped_tag_data_list=sorted(ziped_tag_data_list,key=lambda x:x[1],reverse=True)
-        tag_list,num_of_tagged_list=zip(*ziped_tag_data_list)
+        tag_list,num_of_tagged_list=zip(*ziped_tag_data_list) if ziped_tag_data_list else ([],)
         #清除"搜尋標籤中..."訊息
         doc['search_tag_result'].clear()
         #依序置入標籤SPAN
@@ -216,6 +219,25 @@ def SendRequest_addTag(ev):
         req.send()
     else:
         pass
+
+#定義送出請求動作:新增表符
+def SendRequest_collectEmoji(ev,user_uid):
+    #完成送出時的動作
+    def OnComplete_addTag(res):
+        alert("收藏成功!")
+
+    #獲取當列IMG表符元素的id
+    emoji_id=int(ev.currentTarget.emoji_id)
+    collect_tag=f"__collectorUsers__{user_uid}"
+    
+    req = ajax.ajax()
+    req.bind('complete',OnComplete_addTag)
+    url=f'/PlurkEmojiHouse/emoji_add_tag?id={emoji_id}&add_tag_str={collect_tag}'
+    req.open('GET',url,True)
+    req.set_header('content-type','application/x-www-form-urlencoded')
+    req.send()
+
+
 
 #定義請求:刪除標籤
 def SendRequest_DeleteTag(ev):

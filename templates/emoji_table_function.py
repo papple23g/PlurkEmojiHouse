@@ -126,23 +126,50 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
 
 
     #定義表符圖示下方的動作按鈕
-    def TD_emoji_action_area(emoji_url):
+    def TD_emoji_action_area(emoji_url,emoji_id,be_collected=None):
+
+        #定義動作:收藏或移除收藏表符
+        def AddOrRemoveEmojiAsFavor(ev):
+            #若使用者已經登入
+            if window.firebase.auth().currentUser:
+                user_uid=window.firebase.auth().currentUser.uid
+
+                collect_emoji_btn_elt=ev.currentTarget
+                #若表符尚未被收藏，就進行收藏並亮起愛心按鈕
+                if "be_collected" not in collect_emoji_btn_elt.classList:
+                    #亮起愛心按鈕
+                    collect_emoji_btn_elt.classList.add("be_collected")
+                    #送出收藏表符的請求
+                    SendRequest_collectEmoji(ev,user_uid)
+                ###若表符已經被收藏，就移除收藏並調暗愛心按鈕
+                else:
+                    #調暗愛心按鈕
+                    collect_emoji_btn_elt.classList.remove("be_collected")
+                    alert(f"user {user_uid} remove emoji {emoji_id}")
+            
+            #若使用者尚未登入
+            else:
+                alert("若要收藏表符，請先登入哦")
+
+
         td_elt=TD(Class="emoji_action_area")
         div_elt=DIV()
 
-        #設置在噗浪上搜尋表符icon元素
-        search_on_plurk_linked_btn_elt=A(
-            I(Class="emoji_action fas fa-search"),
-            href="https://www.plurk.com/search?time=365&q="+emoji_url,
-            target="_blank",
-            title="在噗浪上搜尋該表符",
-        )
+        #設置在噗浪上搜尋表符icon元素，並置入emoji_id附加參數以利送出收藏請求
+        collect_emoji_btn_elt=I(
+            Class="emoji_action fas fa-heart",
+        ).bind("click",AddOrRemoveEmojiAsFavor)
+        collect_emoji_btn_elt.emoji_id=emoji_id
+        #若該列表符已被收藏，就調亮愛心按鈕
+        if be_collected:
+            collect_emoji_btn_elt.classList.add("be_collected")
 
         #設置搜尋組合表符icon元素
         combind_emoji_btn_elt=I(
             Class=f"emoji_action fas fa-th-large icon_combind_emoji {EmojiUrlId(emoji_url)}",
             title="查看組合表符",
         ).bind("click",SearchOrAddCombindEmoji)
+
         combind_emoji_btn_elt.emoji_url=emoji_url
         #預定設置附加物件:組合表符網址列表
         combind_emoji_btn_elt.combind_url_list=None
@@ -151,8 +178,8 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
         SendRequest_SearchCombindEmoji(emoji_url,combind_emoji_btn_elt)
         
         #排版
-        div_elt<=search_on_plurk_linked_btn_elt
         div_elt<=combind_emoji_btn_elt
+        div_elt<=collect_emoji_btn_elt
         td_elt<=div_elt
         return td_elt
     #定義動作:在輸入標籤欄上按下Enter時，點擊新增表符DIV按鈕
@@ -309,10 +336,14 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
     td_span_tag_list<=DIV(Class="tag_list_with_comma_str_area hidden")
 
     #在TD標籤列置入SPAN標籤(以逗號為分隔)
+    be_collected=False
     div_span_tag_list=DIV(Class="div_span_tag_list")
     for tag_str in tag_str_list.split(","):
+        #若tag中含有已被使用者收藏的標記...
+        if tag_str=="be_collected":
+            be_collected=True
         #若表符不為空
-        if tag_str!="":
+        elif tag_str!="":
             div_span_tag_list<=SPAN_tag(tag_str)+SPAN(" ") #設定標籤內容不斷行
     td_span_tag_list<=div_span_tag_list
     #置入等待新增訊息元素
@@ -324,7 +355,7 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
             + td_span_tag_list
         )
         +TR(
-            TD_emoji_action_area(emoji_url)
+            TD_emoji_action_area(emoji_url,emoji_id,be_collected=be_collected)
             + TD_function()
         )
     )
@@ -336,6 +367,10 @@ AddStyle('''
     .icon_combind_emoji.has_combind_emoji{
         color: #d23c00b5;
         border-color: #d23c0080;
+    }
+    .fa-heart.be_collected{
+        color: #f79be7;
+        border-color: #ff77d5;
     }
     .icon_pressed{
         background-color: #ddd;

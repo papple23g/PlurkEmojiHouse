@@ -32,12 +32,21 @@ from django.forms.models import model_to_dict
 import json
 
 #定義動作，將QuerySet形式的表符串列轉化成字典串列，一個字典的key包含id,url,tags，其中tags內的標籤之間用逗號區隔
-def EmojiDictList(Emoji_list):
+def EmojiDictList(Emoji_list,user_uid=None):
     Emoji_dict_list=[]
-    for emoji in Emoji_list:
-        Emoji_dict=model_to_dict(emoji)
-        Emoji_dict["tags"]=','.join(emoji.tags.names())
-        Emoji_dict_list.append(Emoji_dict)
+    if user_uid:
+        for emoji in Emoji_list:
+            Emoji_dict=model_to_dict(emoji)
+            ##...
+            emoji_tags_names_filtered_list=[tag_name.replace("__collectorUsers__"+user_uid,"be_collected") for tag_name in emoji.tags.names() if (tag_name=="__collectorUsers__"+user_uid or (not tag_name.startswith("__collectorUsers__")))]
+            Emoji_dict["tags"]=','.join(emoji_tags_names_filtered_list)
+            Emoji_dict_list.append(Emoji_dict)
+    else:
+        for emoji in Emoji_list:
+            Emoji_dict=model_to_dict(emoji)
+            emoji_tags_names_filtered_list=[tag_name for tag_name in emoji.tags.names() if (not tag_name.startswith("__collectorUsers__"))]
+            Emoji_dict["tags"]=','.join(emoji_tags_names_filtered_list)
+            Emoji_dict_list.append(Emoji_dict)
     return Emoji_dict_list
 
 #功能函數:輸入標籤，輸出表符字典串列，格式為[{"url":"...","id":[int],tags":"A,B,..."}]
@@ -45,6 +54,7 @@ def search_by_tag(request):
     #獲取關鍵字與第幾頁面
     search_tag=request.GET.get('search_tag',"")
     i_page=int(request.GET.get('page','0'))
+    user_uid=request.GET.get('user_uid',None)
     #獲取搜尋清單的區間
     num_of_emoji_per_page=int(request.GET.get('num_of_emoji_per_page',"20"))
     i_raw_top=i_page*num_of_emoji_per_page
@@ -55,13 +65,13 @@ def search_by_tag(request):
     #一般搜尋表符的情況    
     else:
         #區分逗號","分出多個標籤
-        searth_tag_list=[tag.strip() for tag in search_tag.split(",") if tag!=""]
+        search_tag_list=[tag.strip() for tag in search_tag.split(",") if tag!=""]
         #進行集合篩選
-        exec('Emoji_list=Emoji.objects'+''.join(['.filter(tags__name__in=[u"'+searth_tag_i_str+'"])' for searth_tag_i_str in searth_tag_list])+'.order_by("-id")')
+        exec('Emoji_list=Emoji.objects'+''.join(['.filter(tags__name__in=[u"'+searth_tag_i_str+'"])' for searth_tag_i_str in search_tag_list])+'.order_by("-id")')
         Emoji_list=Emoji_list[i_raw_top:i_raw_bottom]
     #若有找到一個以上的結果，返回表符字典串列
     if Emoji_list:
-        Emoji_dict_list=EmojiDictList(Emoji_list)
+        Emoji_dict_list=EmojiDictList(Emoji_list,user_uid)
         return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
     else:
         return HttpResponse(u"沒有符合 "+search_tag+" 的搜尋結果")
@@ -86,16 +96,17 @@ def numOfEmojiPageBtn(request):
 def search_by_url(request):
     #必須已經更正過url開頭為https
     search_url=request.GET.get('search_url',"")
+    user_uid=request.GET.get('user_uid',None)
     if ("https://emos.plurk.com/" in search_url) or ("https://s.plurk.com/" in search_url):
         Emoji_list=Emoji.objects.filter(url=search_url)
         #若表符已存在，則僅將該資料回傳表符字典
         if Emoji_list:
-            Emoji_dict_list=EmojiDictList(Emoji_list)
+            Emoji_dict_list=EmojiDictList(Emoji_list,user_uid=user_uid)
         #若表符不存在，則新增該資料後再回傳表符字典
         else:
             Emoji.objects.create(url=search_url)
             Emoji_list=Emoji.objects.filter(url=search_url)
-            Emoji_dict_list=EmojiDictList(Emoji_list)
+            Emoji_dict_list=EmojiDictList(Emoji_list,user_uid=user_uid)
         return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
     else:
         return HttpResponse(u"沒有符合 "+search_url+" 的搜尋結果(網址不正確!)")
@@ -166,13 +177,17 @@ def delete_tag(request):
 def search_tags(request):
     #分析請求，獲取要搜尋的關鍵字列表
     search_tag_list_str=request.GET.get('search_tag',"")
-    search_tag_list=[tag.strip() for tag in search_tag_list_str.split(",") if tag!=""] #.strip() 去除網址前後空白
+    #過濾想要搜尋的關鍵字列表:去除空白和含有使用者收藏標籤的開頭關鍵字
+    search_tag_list=[tag.strip() for tag in search_tag_list_str.split(",") if (tag!="" and ("__collectorUsers__" not in tag))]
+    print(search_tag_list)
     
     tags_list=[]
     num_of_tagged_list=[]
     for search_tag in search_tag_list:
         #將有包含關鍵字的標籤放入tags_list
         tags_list_QuerySet=TAGS.filter(name__icontains=search_tag)
+        #過濾標籤搜尋結果:去除含有使用者收藏標籤的開頭關鍵字
+        tags_list_QuerySet=[tag for tag in tags_list_QuerySet if ("__collectorUsers__" not in tag.name)]
         for tag in tags_list_QuerySet:
             if tag not in tags_list: #不納入重複的標籤
                 tags_list.append(tag.name)
