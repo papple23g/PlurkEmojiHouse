@@ -21,7 +21,7 @@ heroku run python manage.py collectstatic(可選，如果有新增static的檔�
 """
 
 #全域函數:版本號
-VERSION="1.4.0"
+VERSION="2.0.0"
 
 #更改網頁標題
 doc.select("head title")[0].text+=f" {VERSION}"
@@ -837,4 +837,4 @@ doc<=DIV_about_author()
 doc['show_all_emoji_btn'].click()
 
 #讀取Firebase瀏覽人數資料並且顯示出來
-#ShowAndUpdateWebSiteViews()
+ShowAndUpdateWebSiteViews()
