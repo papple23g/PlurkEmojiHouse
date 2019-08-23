@@ -141,7 +141,12 @@ def getEmojiUrlListFromHtml(html_str):
     for emojiUrl in emojiUrlList:
         #不納入重複表符
         if emojiUrl not in emojiUrlList_com:
-            emojiUrlList_com.append(emojiUrl)
+            #若emojiUrl後方有反斜線就協助去除
+            print(emojiUrl)
+            if emojiUrl and emojiUrl[-1]=="/":
+                emojiUrl=emojiUrl[:-1]
+            if any(pic_format in emojiUrl for pic_format in [".bmp",".png",".jpeg",".jpg",".ico"]) and not any(illegal_character in emojiUrl for illegal_character in ["<","*",">","="]):
+                emojiUrlList_com.append(emojiUrl)
     return ["https://emos.plurk.com/"+emojiUrl for emojiUrl in emojiUrlList_com]
 
 #擷取表符網址後段id
@@ -196,3 +201,17 @@ def A_INPUTCheckbox(item_name,checked=False,attr_dict={"symbol":""},Class=None,i
         for k,v in attr_dict.items():
             setattr(inputCheckbox_elt,k,v)
     return SPAN(inputCheckbox_elt+SPAN(item_name),style={"cursor":"pointer"}).bind('click',do_ckecking)
+
+#自表符網址中獲取表符圖片的長寬像素長度
+def GetEmojiWidthAndHeight(emoji_url):
+    w,h=None,None
+    if ("_w" in emoji_url) and ("_h" in emoji_url):
+        w=int(emoji_url[emoji_url.index("_w")+2:emoji_url.index("_h")])
+        h=int(emoji_url[emoji_url.index("_h")+2:emoji_url.rfind(".")])
+    return w,h
+
+#按下第一個頁籤刷新頁面(會有多餘頁籤按鈕問題，目前找不到方法使用此函式)
+def RefreshSreachResultOnFristPage():
+    btn_page_elt_list=doc['emoji_page_btns'].select('button')
+    if btn_page_elt_list:
+        btn_page_elt_list[0].click()

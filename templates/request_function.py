@@ -27,6 +27,13 @@ AddStyle('''
 def SendRequest_searchEmoji(ev):
     page=0 #頁籤預設為第一頁
     request_type=None #搜尋方式變數
+    num_of_emoji_per_page=None
+    search_tag_str=""
+    #根據當前的表符結果顯示設定來顯示一頁的表符數量
+    if "on_pressed" in doc['div_fa_list'].classList:
+        num_of_emoji_per_page=20
+    else:
+        num_of_emoji_per_page=60
 
     #--根據不同的搜尋方式抓取欲搜尋的關鍵字--
     #使用搜尋欄時，抓取搜尋框的文字
@@ -40,7 +47,7 @@ def SendRequest_searchEmoji(ev):
         doc['search_tag_result'].clear()
         request_type="search emoji by click show all"
     #使用頁籤按鈕時，從按鈕物件上提取關鍵字，並抓取欲搜尋的頁次數字
-    elif ev.currentTarget.className=="emoji_page_btn":
+    elif "emoji_page_btn" in ev.currentTarget.classList:
         btn_elt=ev.currentTarget
         search_tag_str=btn_elt.search_tag
         page=int(btn_elt.text)-1
@@ -49,7 +56,7 @@ def SendRequest_searchEmoji(ev):
     elif ev.currentTarget.className=="tag_btn":
         search_tag_str=ev.currentTarget.text
         request_type="search emoji by click tag in emoji tag list"
-        #點擊一下[搜尋表符]頁籤，確保出現在搜尋結果頁面(新增表符點擊標籤時會跳至搜尋表符頁面)
+        #點擊一下[搜尋表符]，確保出現在搜尋結果頁面(新增表符點擊標籤時會跳至搜尋表符頁面)
         doc['button_bar_search_emoji'].click()
     #使用上方標籤搜尋結果區塊的標籤搜尋時
     elif ev.currentTarget.className=="search_result_tag_btn":
@@ -71,7 +78,12 @@ def SendRequest_searchEmoji(ev):
             doc['emoji_result_table']<=P(res.text)
         #有找到表符的情況
         else:
-            doc['emoji_result_table']<=TABLE_emojiReslut(res)
+            ##
+            #根據當前的表符結果顯示設定來顯示表符欄位/網格
+            if "on_pressed" in doc['div_fa_list'].classList:
+                doc['emoji_result_table']<=TABLE_emojiReslut(res)
+            else:
+                doc['emoji_result_table']<=DIV_emojiReslut_Block(res)
             #若為網址新增表符動作，則清空搜尋欄文字
             if request_type=="search or add emoji by input url":
                 doc['search_tag'].value=""
@@ -91,7 +103,7 @@ def SendRequest_searchEmoji(ev):
     if request_type=="search or add emoji by input url":
         url=f'/PlurkEmojiHouse/search_by_url?search_url={emoji_url}&user_uid={user_uid}'
     else:
-        url=f'/PlurkEmojiHouse/search_by_tag?search_tag={search_tag_str}&page={page}&user_uid={user_uid}'
+        url=f'/PlurkEmojiHouse/search_by_tag?search_tag={search_tag_str}&page={page}&user_uid={user_uid}&num_of_emoji_per_page={num_of_emoji_per_page}'
     req = ajax.ajax()
     req.bind('complete',OnComplete_searchEmoji)
     req.bind('loading',OnLoading_searchEmoji)
@@ -101,7 +113,7 @@ def SendRequest_searchEmoji(ev):
 
     #若不是以頁籤進行搜尋，則進行生成頁籤按鈕請求處理
     if request_type!="search emoji by click page button":
-        SendRequest_insertEmojiPageBtn(search_tag_str)
+        SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page)
     
     #若是輸入標籤搜尋或點擊標籤搜尋，就搜尋相似的標籤 (排除空白關鍵字)
     if search_tag_str.strip():
@@ -109,19 +121,25 @@ def SendRequest_searchEmoji(ev):
             SendRequest_searchTags(search_tag_str)
 
 #定義請求動作:顯示表符搜尋結果的頁籤按鈕
-def SendRequest_insertEmojiPageBtn(search_tag_str):
+def SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page):
+    #先清空頁籤按鈕區塊
+    doc['emoji_page_btns'].clear()
+
     #定義動作:顯示表符搜尋結果的頁籤按鈕
     def OnComplete_insertEmojiPageBtn(res):
+        #再次清空頁籤按鈕區塊(防止出現重複置入按鈕的請況)
+        doc['emoji_page_btns'].clear()
+
         num_of_emoji_page_btn=int(res.text)
         for num_of_emoji_page in range(1,num_of_emoji_page_btn+1):
             doc['emoji_page_btns']<=BUTTON_emijiPage_elt(num_of_emoji_page,search_tag_str)
         #預設第一個頁籤按鈕為按下的狀態(僅會在「搜尋表符」子頁面下發揮作用)
         if doc['emoji_page_btns'].select("#emoji_page_btns > button:nth-child(1)"):
             doc['emoji_page_btns'].select("#emoji_page_btns > button:nth-child(1)")[0].classList.add('emoji_page_btn_press')
-    url=f'/PlurkEmojiHouse/numOfEmojiPageBtn?search_tag={search_tag_str}'
+    url=f'/PlurkEmojiHouse/numOfEmojiPageBtn?search_tag={search_tag_str}&num_of_emoji_per_page={num_of_emoji_per_page}'
     req = ajax.ajax()
     req.bind('complete',OnComplete_insertEmojiPageBtn)
-    req.bind('loading',lambda ev:doc['emoji_page_btns'].clear()) #讀取時清空頁籤按鈕區塊
+    
     req.open('GET',url,True)
     req.set_header('content-type','application/x-www-form-urlencoded')
     req.send()
@@ -589,7 +607,7 @@ def SendRequest_addEmojiList(emoji_url_list_str,do_clean_previous_area=True):
     req.set_header('content-type','application/x-www-form-urlencoded')
     req.send()
 
-##定義請求:新增組合表符
+#定義請求:新增組合表符
 def SendRequest_addCombindEmoji(ev):
 
     #定義動作:複製組合表符網址
@@ -696,7 +714,6 @@ def ShowAndUpdateWebSiteViews():
     def UpdateWebSiteViews(data_dict,path):
         database_ref=database.ref(path)
         database_ref.update(data_dict)
-        print("已新增:")##
         log(data_dict)##
 
     path="PlurkEmojiHouse"
@@ -704,7 +721,6 @@ def ShowAndUpdateWebSiteViews():
     def gotData(data):
         data_dict=JSObject_to_PythonDict(data.toJSON())
         webSiteViews=data_dict['WebSiteViews']
-        print(webSiteViews)
         #增加瀏覽量並更新瀏覽人數資料
         webSiteViews+=1
         data_dict['WebSiteViews']=webSiteViews

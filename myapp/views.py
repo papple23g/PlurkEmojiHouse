@@ -102,7 +102,6 @@ def numOfEmojiPageBtn(request):
         #進行集合篩選
         exec('Emoji_list=Emoji.objects'+''.join(['.filter(tags__name__in=[u"'+searth_tag_i_str+'"])' for searth_tag_i_str in search_tag_list])+'.order_by("-id")')
         num_of_btn=(len(Emoji_list)-1)/num_of_emoji_per_page +1
-        #print('num_of_btn:',num_of_btn)
     return HttpResponse(num_of_btn)
     
     
@@ -193,7 +192,6 @@ def search_tags(request):
     search_tag_list_str=request.GET.get('search_tag',"")
     #過濾想要搜尋的關鍵字列表:去除空白和含有使用者收藏標籤的開頭關鍵字
     search_tag_list=[tag.strip() for tag in search_tag_list_str.split(",") if (tag!="" and ("__collectorUsers__" not in tag))]
-    print(search_tag_list)
     
     tags_list=[]
     num_of_tagged_list=[]

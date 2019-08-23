@@ -45,9 +45,6 @@ def DIV_login():
 
 #定義動作:當載入網站或登入狀態有變動時，就刷新登入DIV元素，以及刷新搜尋結果
 def onAuthStateChanged(user):
-    #提示資訊
-	print("AuthStateChanged!")
-	log(user)
     #刷新登入DIV元素
 	doc['DIV_userLoginInfo'].clear()
 	doc['DIV_userLoginInfo']<=DIV_login()

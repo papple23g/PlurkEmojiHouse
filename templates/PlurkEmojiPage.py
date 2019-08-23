@@ -18,7 +18,15 @@ heroku run python manage.py makemigrations  (可選，如果本地有新增app�
 heroku run  python manage.py migrate (可選，如果本地有新增app應用)
 heroku run python manage.py createsuperuser (可選，如果本地有新增超級管理員)
 heroku run python manage.py collectstatic(可選，如果有新增static的檔案)
+
+#刪除Emoji範例
+heroku run python manage.py shell -a papple23g-mysite2
+from myapp.models import Emoji
+Emoji.objects.filter(id="13600").delete()
+
 """
+
+
 
 #全域函數:版本號
 VERSION="2.0"
@@ -302,15 +310,8 @@ def DIV_subpage_searchEmoji():
 
     div_card_elt<=DIV_description()
 
-    #設置顯示我的收藏A_INPUTCheckbox勾選元素
-
-    def onclick_div_showCollectEmojis(ev):
-        div_showCollectEmojis=ev.currentTarget
-        if "disabled" in div_showCollectEmojis.classList:
-            alert("登入後可使用收藏功能")
-
-    div_showCollectEmojis_inputCheckbox=DIV(
-        A_INPUTCheckbox(" 顯示我的收藏",id="checkbox_showCollectEmojis"),
+    div_search_setting_elt=DIV(
+        id="div_search_setting",
         style={
             "clear":"both",
             "margin-left":"4px",
@@ -318,16 +319,100 @@ def DIV_subpage_searchEmoji():
             "font-weight":"bold",
             "font-family":"微軟正黑體",
         },
+    )
+
+    #設置顯示我的收藏A_INPUTCheckbox勾選元素
+
+    def onclick_div_showCollectEmojis(ev):
+        div_showCollectEmojis=ev.currentTarget
+        if "disabled" in div_showCollectEmojis.classList:
+            alert("登入後可使用收藏功能")
+
+    #設置「顯示我的收藏」勾選DIV元素
+    div_showCollectEmojis_inputCheckbox=DIV(
+        A_INPUTCheckbox(" 顯示我的收藏",id="checkbox_showCollectEmojis"),
         id="div_showCollectEmojis",
+        style={"float":"left"}
     ).bind("click",onclick_div_showCollectEmojis)
-    #綁定勾選元素變動時，會自動按下搜尋(自動刷新)，並交由後續判斷是否要搜尋已收藏的表符
-    ###非登入者無法勾選
+    #綁定勾選元素變動時，會自動按下搜尋(自動刷新)，並交由後續判斷是否要搜尋已收藏的表符 (非登入者無法勾選)
     checkbox_showCollectEmojis_elt=div_showCollectEmojis_inputCheckbox.select('input')[0]
     checkbox_showCollectEmojis_elt.bind("change",lambda ev:doc['search_tag_btn'].click())
 
+    #設置表符出現樣式DIV元素
+    def DIV_EmojiTableStyleSwitch():
+
+        ##定義動作:切換顯示表符列表方式
+        def SwitchEmojiTableStyle(ev):
+            #獲取備案的按鍵元素
+            div_i_elt=ev.currentTarget
+            i_elt=div_i_elt.select("i")[0]
+            #若該按鍵已經被壓著，就不進行動作
+            if "on_pressed" in i_elt.classList:
+                pass
+            #若該按鍵還沒壓著
+            else:
+                #按下目前還沒壓著的按鈕
+                div_i_elt.classList.add("on_pressed")
+                #若按下的是網格顯示按鍵，就彈起清單按鈕
+                if "fa-th" in i_elt.classList:
+                    doc['div_fa_list'].classList.remove("on_pressed")
+                #若按下的是網格顯示按鍵，就彈起清單按鈕
+                else:
+                    doc['div_fa_th'].classList.remove("on_pressed")
+            
+            #點擊搜尋按鈕，刷新頁面
+            doc['search_tag_btn'].click()
+
+
+        div_elt=DIV(id="div_emojiTableStyleSwitch",style={"float":"right"})
+        #設置顯示表符列表方式按鈕:清單
+        btn_listTable=DIV(
+            I(Class="fas fa-list"),
+            style={"border-radius":"10px 0px 0px 10px"},
+            id="div_fa_list",
+            Class="on_pressed",
+        ).bind("click",SwitchEmojiTableStyle)
+        #設置顯示表符列表方式按鈕:網格
+        btn_blockTable=DIV(
+            I(Class="fas fa-th"),
+            style={"border-radius":"0px 10px 10px 0px"},
+            id="div_fa_th"
+        ).bind("click",SwitchEmojiTableStyle)
+
+        div_elt<=btn_blockTable
+        div_elt<=btn_listTable
+        return div_elt
+    AddStyle('''
+    #div_emojiTableStyleSwitch i{
+        padding: 5px 10px;
+        margin: 0 -1px;
+    }
+    #div_emojiTableStyleSwitch div{
+        border: #999 2px solid;
+        float:right;
+        margin: 0 -1px;
+        color:#999;
+        cursor:pointer;
+    }
+    #div_emojiTableStyleSwitch div.on_pressed{
+        background-color: #ccc;
+        color: #fff;
+        cursor:initial;
+    }
+
+    ''')
+
+    
+    div_search_setting_elt<=div_showCollectEmojis_inputCheckbox
+    div_search_setting_elt<=DIV_EmojiTableStyleSwitch()
+
+
+
 
     #排版
-    div_card_elt<=div_showCollectEmojis_inputCheckbox
+    
+    div_card_elt<=div_search_setting_elt
+
     div_elt<=div_card_elt
 
     #--排版--#
@@ -351,6 +436,7 @@ AddStyle('''
     }
     .div_emoji_result_table_area{
         width: 90%;
+        max-width: 1000px;
         margin: 20px 0px 0px 20px;
     }
 
@@ -837,4 +923,4 @@ doc<=DIV_about_author()
 doc['show_all_emoji_btn'].click()
 
 #讀取Firebase瀏覽人數資料並且顯示出來
-ShowAndUpdateWebSiteViews()
+#ShowAndUpdateWebSiteViews()
