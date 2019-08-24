@@ -56,6 +56,10 @@ AddStyle('''
     ''')
 #定義SPAN標籤元素
 def SPAN_tag(tag_str,style=None):
+
+    def OnClickSPANTag(ev):
+        doc['search_tag'].value=tag_str
+
     #製作輸出元素
     com_elt=SPAN(
                 SPAN(tag_str),
@@ -66,6 +70,8 @@ def SPAN_tag(tag_str,style=None):
             )
     #綁定左鍵搜尋(全域功能函數)
     com_elt.bind("click",SendRequest_searchEmoji)
+    #綁定按下時替換搜尋欄內的文字框
+    com_elt.bind("click",OnClickSPANTag)
     #綁定右鍵刪除(局域功能函數)
     com_elt.bind('contextmenu',SendRequest_DeleteTag)
     return com_elt
