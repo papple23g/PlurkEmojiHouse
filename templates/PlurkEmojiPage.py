@@ -4,12 +4,14 @@ cd "C:\Users\Peter Wang\Google Drive\mysite2"
 python2 manage.py runserver 0.0.0.0:8001
 
 cd "C:\Users\pappl\Google Drive\mysite2"
-python2 manage.py runserver 0.0.0.0:8001
+python manage.py runserver 0.0.0.0:8000
 
 #更新上傳指令
+cd "C:\Users\Peter Wang\Google Drive\mysite2"
 cd "C:\Users\pappl\Google Drive\mysite2"
 git add .
-git commit -m "1.4.1"
+git commit -m "
+
 git push heroku master
 git push -u origin master
 
@@ -29,7 +31,7 @@ Emoji.objects.filter(id="13600").delete()
 
 
 #全域函數:版本號
-VERSION="2.0"
+VERSION="2.1"
 
 #更改網頁標題
 doc.select("head title")[0].text+=f" {VERSION}"
@@ -128,7 +130,7 @@ def DIV_bars():
     '其他bars'
     div_elt<=DIV_ButtonBar("新增表符",id="button_bar_add_emoji").bind("click",onClick_bar)
     div_elt<=DIV_ButtonBar("更新日誌",id="button_bar_update_diary").bind("click",onClick_bar)
-    div_elt<=DIV_ButtonBar("其他作品",id="button_bar_other_production").bind("click",onClick_bar)
+    div_elt<=DIV_ButtonBar("其他推廣",id="button_bar_other_production").bind("click",onClick_bar)
     div_elt<=DIV_ButtonBar("關於作者",id="button_bar_about_author").bind("click",onClick_bar)
     #設定bar被按下時的樣式
     AddStyle("""
@@ -295,7 +297,6 @@ def DIV_subpage_searchEmoji():
             id="div_description",
             style={
                 "float":"right",
-                "margin-top":"29px",
             }
         )
         div_elt<=DIV_showTipText(
@@ -818,96 +819,48 @@ AddStyle('''
 #定義子頁面:更新日誌
 def DIV_subpage_updateDiary():
     div_elt=DIV(id="更新日誌",Class="subpage",style={"display":"none"})
-    div_elt<=DIV(IFRAME(src="https://docs.google.com/document/d/e/2PACX-1vT0Z3y-e_t7ZIWRjcfOr-0f22uHqQLTDwrtNCeaPJNoI78KyviNLREvLV-eVId9MezNuRlqk2hCsHdI/pub?embedded=true"),id="warp_iframe")
+    
+    div_elt<=DIV(IFRAME(src="https://hackmd.io/@YAK978r0TGugkhvYKSXT-g/HkwDgSKQH"),id="warp_iframe")
+    #div_elt<=DIV(IFRAME(src="https://docs.google.com/document/d/e/2PACX-1vT0Z3y-e_t7ZIWRjcfOr-0f22uHqQLTDwrtNCeaPJNoI78KyviNLREvLV-eVId9MezNuRlqk2hCsHdI/pub?embedded=true"),id="warp_iframe")
     return div_elt
 AddStyle('''
-    #更新日誌 #warp_iframe{
-        overflow: hidden;
-        width: 100%;
-    }
     #更新日誌 iframe{
-        width: 900px;
-        height: 3000px;
-        margin-top: -80px;
-        margin-left: -63px;
-        padding-right: 380px;
-        border: 0;
+    width: 100%;
+    height: 3000px;
+    border: 0;
     }
 ''')
 
-#定義子頁面:其他作品
+#定義子頁面:其他推廣
 def DIV_otherProduction():
-    div_elt=DIV(id="其他作品",Class="subpage",style={"display":"none"})
-    div_elt<=H4("【網站工具】")
-    div_elt<=A(
-        IMG(
-            src="https://i.imgur.com/QhJwVs1.png",
-            width="200px",
-            id="ahktool_site_icon",
-        ),
-        href="https://sites.google.com/view/ahktool/",
-        target="_blank",
-    )
-    div_elt<=P("● 一個提高工作效率的網站工具 - 快捷鍵語法產生器")
-    div_elt<=DIV(
-        IFRAME(
-            src="https://www.youtube.com/embed/videoseries?list=PLtO1yDnSMpUPDN9rkqTgEIOGfumA86AyG",
-            frameborder="0",
-            allow="autoplay; encrypted-media",
-            allowfullscreen=True,
-            Class="youtube_playlist",
-        ),
-        Class="youtube_playlist_container"
-    )
+    div_elt=DIV(id="其他推廣",Class="subpage",style={"display":"none"})
+
+    div_elt<=DIV(IFRAME(src="https://hackmd.io/@papple23g/Byc0WHFXH"),id="warp_iframe")
+
     return div_elt
 AddStyle('''
-    img#ahktool_site_icon:hover {
-        box-shadow: orange 0px 0px 10px 2px;
-    }
-    .youtube_playlist_container {
-        position: relative;
-        width: 500px;
-        height: 300px;
-        padding-bottom: 56.25%;
-    }
-    .youtube_playlist {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 500px;
-        height: 300px;
-    }
-    @media screen and (max-width: 500px) {
-        .youtube_playlist_container {
-            position: relative;
-            width: 300px;
-            height: 180px;
-            padding-bottom: 56.25%;
-        }
-        .youtube_playlist {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 300px;
-            height: 180px;
-        }
+    #其他推廣 iframe{
+    width: 100%;
+    height: 3000px;
+    border: 0;
     }
 ''')
+
 
 #定義子頁面:關於作者
 def DIV_about_author():
     div_elt=DIV(id="關於作者",Class="subpage",style={"display":"none"})
-    div_elt<=P("● 作者信箱")
-    div_elt<=P("papple23g@gmail.com")+HR()
-    div_elt<=P("● 作者噗浪")
-    div_elt<=IFRAME(
-        src="https://www.plurk.com/getWidget?uid=4180727&amp;h=375&amp;w=200&amp;u_info=2&amp;bg=FF574D&tl=EEEBF0",
-        width="300",
-        frameborder="0",
-        height="375",
-        scrolling="no",
-    )
+    
+    div_elt<=DIV(IFRAME(src="https://hackmd.io/@papple23g/SkRWltCVB"),id="warp_iframe")
+
     return div_elt
+AddStyle('''
+    #關於作者 iframe{
+    width: 100%;
+    height: 3000px;
+    border: 0;
+    }
+''')
 
 #排版:置入DIV網頁header區塊
 doc<=DIV_header()
@@ -923,4 +876,4 @@ doc<=DIV_about_author()
 doc['show_all_emoji_btn'].click()
 
 #讀取Firebase瀏覽人數資料並且顯示出來
-#ShowAndUpdateWebSiteViews()
+ShowAndUpdateWebSiteViews()

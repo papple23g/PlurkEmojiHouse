@@ -97,7 +97,7 @@ AddStyle('''
 #定義TD表符結果表格單橫列元素
 def TR_emoji(emoji_url,emoji_id,tag_str_list):
 
-    #定義動作:搜尋或新增組表符
+    #定義動作:搜尋或新增組合表符
     def SearchOrAddCombindEmoji(ev):
         #點擊[搜尋表符]子頁籤，確保正在該子頁面動作
         doc['button_bar_search_emoji'].click()
@@ -118,7 +118,10 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
         #若該表符已經有組合表符，則暫時切換至組合表符結果頁面
         else:
             #隱藏表符TABLE頁面、頁籤DIV元素、標籤搜尋結果區塊DIV元素
-            doc['table_emoji_result'].classList.add("hidden")
+            if doc.select('#table_emoji_result'):
+                doc['table_emoji_result'].classList.add("hidden")
+            if doc.select('#div_emojiReslutBlockContainOneRowTable'):
+                doc['div_emojiReslutBlockContainOneRowTable'].classList.add("hidden")
             doc['emoji_page_btns'].classList.add("hidden")
             doc['search_tag_result'].classList.add("hidden")
             #置入組合表符結果頁面DIV_TABLE元素
@@ -428,11 +431,11 @@ AddStyle('''
 
 
 
-###定義TABLE表符結果表格元素:輸入res的表符字典串列，回傳TABLE表符果
+#定義TABLE表符結果表格元素:輸入res的表符字典串列，回傳TABLE表符果
 def DIV_emojiReslut_Block(res_emoji_dict_list):
     emoji_dict_list=json.loads(res_emoji_dict_list.text)
 
-    div_elt=DIV()
+    div_elt=DIV(id="div_emojiReslutBlockContainOneRowTable")
     div_emojiReslutBlock_elt=DIV(id="div_emojiReslutBlock")
     div_margin=DIV(style={"clear":"both","height":"20px"})
     div_emojiOneRowTable_elt=DIV(id="div_emojiOneRowTable")
@@ -443,16 +446,12 @@ def DIV_emojiReslut_Block(res_emoji_dict_list):
 
         #定義動作:點擊一個網格內的表符時，顯示單行表符結果Table
         def ShowEmojiOneRowTable(ev):
-            #取消預設動作:雙擊選取
-            def cancelSelection(ev):
-                window.getSelection().removeAllRanges()
 
             #從div_img_emojiBlock元素獲取表符詳細資訊
             div_img_emojiBlock=ev.currentTarget
             emoji_dict=div_img_emojiBlock.emoji_dict
             emoji_url=emoji_dict['url']
             emoji_id=emoji_dict['id']
-            tag_str_list=emoji_dict['tags']
 
             #高亮被點到的表符
             img_elt=div_img_emojiBlock.select('img')[0]
@@ -464,19 +463,23 @@ def DIV_emojiReslut_Block(res_emoji_dict_list):
                         img_onSelected_elt.classList.remove('on_selected')
                 #高亮被點到的表符
                 img_elt.classList.add('on_selected')
-            
+
             #複製該表符的網址
             CopyTextToClipborad(f"*{emoji_url}*")
-            ###顯示複製成功提示?
 
-            
             #在下方顯示單行表符結果Table
-            doc['div_emojiOneRowTable'].clear()
-            doc['div_emojiOneRowTable']<=TABLE(
-                TR_emojiReslut()+
-                TR_emoji(emoji_url,emoji_id,tag_str_list)
-                ).bind('dblclick',cancelSelection)
-
+            #隱藏其他已顯示的單行表符TABLE元素
+            div_table_elt_list=[div_table_elt for div_table_elt in doc['div_emojiOneRowTable'].select('div.div_table_OneRowEmojiTable') if "hidden" not in div_table_elt.classList]
+            for div_table_elt in div_table_elt_list:
+                div_table_elt.classList.add("hidden")
+            
+            div_table_id=f"div_table_OneRowEmojiTable_{emoji_id}"
+            #顯示對應的單行表符DIV_TABLE元素
+            doc[div_table_id].classList.remove("hidden")
+            #若對應的單行表符DIV_TABLE元素沒有table元素，就置入
+            if not doc[div_table_id].select('table'):
+                doc[div_table_id]<=TABLE_OneRowEmojiTable(emoji_dict)
+        
         div_elt=DIV(Class="div_emoji_block")
         div_elt<=IMG(src=emoji_dict['url'])
 
@@ -490,6 +493,10 @@ def DIV_emojiReslut_Block(res_emoji_dict_list):
         #將表符資料字典附加到DIV_img_emojiBlock元素
         div_elt.emoji_dict=emoji_dict
         div_elt.bind("click",ShowEmojiOneRowTable)
+
+        #被點下時顯示複製成功的提示
+        div_elt=DIV_showTipText(div_elt,"已複製",show_ev_list=["click"],hide_ev_list=["mouseout"],tip_margin_left="-20px",trangle_margin_left="-10px",width="60px")
+
         return div_elt
 
     AddStyle('''
@@ -513,11 +520,38 @@ def DIV_emojiReslut_Block(res_emoji_dict_list):
         border: 4px solid #16cc00;
         box-shadow: 0px 0px 10px 5px yellow;
         position: absolute;
+        z-index: 10;
     }
     ''')
 
+    #定義單行表符TABLE元素的容器DIV元素
+    def DIV_TABLE_OneRowEmojiTable(emoji_dict):
+        emoji_id=emoji_dict['id']
+        return DIV(id=f"div_table_OneRowEmojiTable_{emoji_id}",Class="div_table_OneRowEmojiTable hidden")
+
+    #定義單行表符TABLE元素
+    def TABLE_OneRowEmojiTable(emoji_dict):
+        #取消預設動作:雙擊選取
+        def cancelSelection(ev):
+            window.getSelection().removeAllRanges()
+
+        emoji_url=emoji_dict['url']
+        emoji_id=emoji_dict['id']
+        tag_str_list=emoji_dict['tags']
+        
+        #在下方顯示單行表符結果Table
+        table_elt=TABLE(
+            TR_emojiReslut()+
+            TR_emoji(emoji_url,emoji_id,tag_str_list),
+            id=f"table_OneRowEmojiTable_{emoji_id}",
+            Class="table_OneRowEmojiTable",
+            ).bind('dblclick',cancelSelection)
+        
+        return table_elt
+
     for emoji_dict in emoji_dict_list:
         div_emojiReslutBlock_elt<=DIV_img_emojiBlock(emoji_dict)
+        div_emojiOneRowTable_elt<=DIV_TABLE_OneRowEmojiTable(emoji_dict)
 
     #排版
     div_elt<=div_emojiReslutBlock_elt
@@ -588,16 +622,24 @@ def DIV_CombindEmojiTable(combind_url_list,emoji_url):
         btn_back_elt=ev.currentTarget
         #清除自組合表符頁面
         doc['div_combind_emoji_table'].remove()
-        #顯示表符TABLE頁面、頁籤DIV元素、標籤搜尋結果區塊DIV元素
-        doc['table_emoji_result'].classList.remove("hidden")
+        #顯示表符TABLE頁面或表符Block頁面(看誰存在就對誰執行顯示)、頁籤DIV元素、標籤搜尋結果區塊DIV元素
+        if doc.select('#table_emoji_result'):
+            doc['table_emoji_result'].classList.remove("hidden")
+        if doc.select('#div_emojiReslutBlockContainOneRowTable'):
+            doc['div_emojiReslutBlockContainOneRowTable'].classList.remove("hidden")
+
         doc['emoji_page_btns'].classList.remove("hidden")
         doc['search_tag_result'].classList.remove("hidden")
-        doc<=A(
-            id="a_led_to_emoji_tr",
-            href=f"#{EmojiUrlId(btn_back_elt.emoji_url)}"
-        )
-        doc['a_led_to_emoji_tr'].click()
-        doc['a_led_to_emoji_tr'].remove()
+
+        #若為自[組合表符頁面]切換到[表符列表頁面]，就帶使用者回到列表位置
+        # ( 列表的表符會自帶表符UID )
+        if doc.select(f'#{EmojiUrlId(btn_back_elt.emoji_url)}'):
+            doc<=A(
+                id="a_led_to_emoji_tr",
+                href=f"#{EmojiUrlId(btn_back_elt.emoji_url)}"
+            )
+            doc['a_led_to_emoji_tr'].click()
+            doc['a_led_to_emoji_tr'].remove()
         
         do_delete_combind_url_list=btn_back_elt.do_delete_combind_url_list
         #刪除組合表符ICON的附加元素，組合表符串列，內的組合表符

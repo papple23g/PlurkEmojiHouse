@@ -78,7 +78,6 @@ def SendRequest_searchEmoji(ev):
             doc['emoji_result_table']<=P(res.text)
         #有找到表符的情況
         else:
-            ##
             #根據當前的表符結果顯示設定來顯示表符欄位/網格
             if "on_pressed" in doc['div_fa_list'].classList:
                 doc['emoji_result_table']<=TABLE_emojiReslut(res)
@@ -122,8 +121,10 @@ def SendRequest_searchEmoji(ev):
 
 #定義請求動作:顯示表符搜尋結果的頁籤按鈕
 def SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page):
-    #先清空頁籤按鈕區塊
+    #先顯示並清空頁籤按鈕區塊
+    doc['emoji_page_btns'].classList.remove('hidden')
     doc['emoji_page_btns'].clear()
+    
 
     #定義動作:顯示表符搜尋結果的頁籤按鈕
     def OnComplete_insertEmojiPageBtn(res):
@@ -240,7 +241,7 @@ def SendRequest_addTag(ev):
     else:
         pass
 
-#定義送出請求動作:新增表符
+#定義送出請求動作:新增收藏表符
 def SendRequest_collectEmoji(ev,user_uid):
     #完成送出時的動作
     def OnComplete_collectEmoji(res):
@@ -477,7 +478,7 @@ AddStyle("""
 """)
 
 
-#XX#定義送出請求，一次增加所有被列出所選表符的標籤
+#定義送出請求，一次增加所有被列出所選表符的標籤
 def send_requset_adding_tag_to_all_emoji(ev):
     if (ev.type=="keyup" and ev.keyCode==13) or (ev.type=="click"):
         emoji_id_str_for_add_list=[img_emoji_elt.id[len("emoji_img"):] for img_emoji_elt in doc['div_emoji_list_from_html'].select('.emoji_pic')]

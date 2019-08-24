@@ -246,4 +246,5 @@ def DeleteCombindEmoji(request):
 def SearchCombindEmoji(request):
     emoji_url=request.GET.get('emoji_url',None)
     combind_url_list=[combindEmoji.combind_url for combindEmoji in CombindEmoji.objects.filter(emoji_url_set__name__in=[emoji_url])]
+    print "emoji_url:",emoji_url,"\ncombind_url_list:",combind_url_list
     return HttpResponse(json.dumps(combind_url_list), content_type="application/json")
