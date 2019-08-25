@@ -31,7 +31,7 @@ Emoji.objects.filter(id="13600").delete()
 
 
 #全域函數:版本號
-VERSION="2.1"
+VERSION="2.2"
 
 #更改網頁標題
 doc.select("head title")[0].text+=f" {VERSION}"
@@ -489,9 +489,9 @@ def DIV_subpage_addEmoji():
 
     select_elt=SELECT(id="select_adding_emoji_method",style={"margin-bottom":"15px"})
     select_elt<=OPTION("表符圖片網址")
-    select_elt<=OPTION("公開噗文網址")
+    select_elt<=OPTION("公開噗文網址",style={"color":"blue","background-color":"#ffff0087"},selected=True)
     select_elt<=OPTION("噗文網頁原始碼")
-    select_elt<=OPTION("組合表符",style={"color":"blue","background-color":"#ffff0087"})
+    select_elt<=OPTION("組合表符")
     select_elt.bind("change",ChangeAddingEmojiMethod)
  
     #定義綁定按下Enter送出新增表符
@@ -737,7 +737,7 @@ def DIV_subpage_addEmoji():
 
 
     #排版
-    div_card_elt<=SPAN("選擇輸入 ")+select_elt+SPAN("new",style={"color":"red","font-size":"10px"})+BR()
+    div_card_elt<=SPAN("選擇輸入 ")+select_elt+DIV(" new : 可以新增噗浪回應中的表符了! (2019.8.25) ",style={"color":"red","font-size":"10px"})+BR()
     div_card_elt<=DIV_input_emoji_url_to_add_emoji()
     div_card_elt<=DIV_input_plurk_url_to_add_emoji()
     div_card_elt<=DIV_input_html_to_add_emoji()
@@ -876,4 +876,4 @@ doc<=DIV_about_author()
 doc['show_all_emoji_btn'].click()
 
 #讀取Firebase瀏覽人數資料並且顯示出來
-#ShowAndUpdateWebSiteViews()
+ShowAndUpdateWebSiteViews()

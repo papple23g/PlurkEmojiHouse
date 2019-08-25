@@ -139,8 +139,7 @@ def getEmojiUrlListFromHtml(html_str):
     div_elt.innerHTML=html_str
     img_emoji_elt_list=[img_elt for img_elt in div_elt.select('img') if "https://emos.plurk.com/" in img_elt.src]
     emoji_url_list=list(set(img_elt.src for img_elt in img_emoji_elt_list))
-    print('yes!')
-    div_elt.clear() ##
+    div_elt.clear()
     return emoji_url_list
 
 #定義功能函數，從HTML原始碼抓取表符網址列表 (使用字串擷取) (已棄用)

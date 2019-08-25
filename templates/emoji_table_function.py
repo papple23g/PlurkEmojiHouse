@@ -243,16 +243,20 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
             ev.currentTarget.classList.toggle("icon_pressed")
             #獲取標籤列表DIV區塊
             tr_span_tag_list_elt=ParentElt(ev.currentTarget,"TR").previousSibling
+            print("tr_span_tag_list_elt",tr_span_tag_list_elt)
             div_span_tag_list_elt=tr_span_tag_list_elt.select(".div_span_tag_list")[0]
+            print("div_span_tag_list_elt",div_span_tag_list_elt)
             #獲取標籤列表SPAN串列
             span_tags_elt_list=div_span_tag_list_elt.select(".tag_btn")
+            print("span_tags_elt_list",span_tags_elt_list)
             #獲取顯示標籤純文字DIV區塊
             div_tag_list_with_comma_str_area=tr_span_tag_list_elt.select("div.tag_list_with_comma_str_area")[0]
+            print("div_tag_list_with_comma_str_area",div_tag_list_with_comma_str_area)
             #生成標籤列表純文字(以","間隔)
             tag_list_with_comma_str=", ".join([span_tags_elt.text for span_tags_elt in span_tags_elt_list])
             #隱藏標籤列表DIV區塊、顯示標籤純文字區塊
-            div_span_tag_list_elt.classList.add("hidden")
-            div_tag_list_with_comma_str_area.classList.add("hidden")
+            div_span_tag_list_elt.classList.toggle("hidden")
+            div_tag_list_with_comma_str_area.classList.toggle("hidden")
             #置入(顯示)標籤列表純文字
             div_tag_list_with_comma_str_area.innerHTML=tag_list_with_comma_str
         
