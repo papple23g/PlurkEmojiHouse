@@ -489,7 +489,7 @@ def DIV_subpage_addEmoji():
 
     select_elt=SELECT(id="select_adding_emoji_method",style={"margin-bottom":"15px"})
     select_elt<=OPTION("表符圖片網址")
-    select_elt<=OPTION("公開噗文網址",style={"color":"blue","background-color":"#ffff0087"},selected=True)
+    select_elt<=OPTION("公開噗文網址",style={"color":"blue","background-color":"#ffff0087"})
     select_elt<=OPTION("噗文網頁原始碼")
     select_elt<=OPTION("組合表符")
     select_elt.bind("change",ChangeAddingEmojiMethod)
@@ -874,6 +874,12 @@ doc<=DIV_about_author()
 
 #進入前直接顯示全部表符
 doc['show_all_emoji_btn'].click()
+
+#默認新增表符頁面的選項是[公開噗文網址]
+doc['select_adding_emoji_method'].selectedIndex=1
+change_ev = window.Event.new("change")
+doc['select_adding_emoji_method'].dispatchEvent(change_ev)
+
 
 #讀取Firebase瀏覽人數資料並且顯示出來
 ShowAndUpdateWebSiteViews()
