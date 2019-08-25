@@ -876,4 +876,4 @@ doc<=DIV_about_author()
 doc['show_all_emoji_btn'].click()
 
 #讀取Firebase瀏覽人數資料並且顯示出來
-ShowAndUpdateWebSiteViews()
+#ShowAndUpdateWebSiteViews()

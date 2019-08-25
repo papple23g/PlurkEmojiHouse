@@ -218,10 +218,34 @@ def NumOfEmoji_and_NumOfTag(request):
 #功能函數，用爬蟲獲取噗文網址的原始碼
 import requests
 def PlurkUrlHtml(request):
+    #獲取噗首原始碼以及該噗文的ID
     plurk_url=request.GET.get('plurk_url',None)
     headers={"User-Agent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8 GTB7.1 (.NET CLR 3.5.30729)", "Referer": "http://example.com"}
     res=requests.get(plurk_url, headers=headers, timeout=10)
-    return HttpResponse(res)
+    res_text=res.text
+    plurk_id_sandStr=', "plurk_id": '
+    res_text_plurkIdSandStr_i=res_text.index(plurk_id_sandStr)
+    plurk_id_str=res_text[res_text_plurkIdSandStr_i+len(plurk_id_sandStr) : res_text.index(",",res_text_plurkIdSandStr_i+1) ]
+
+    #根據該噗文的ID進行POST請求，獲取回應噗文的字典資料
+    post_data_dict={
+        'plurk_id':plurk_id_str,
+        'count':'1000',
+    }
+    url=r'https://www.plurk.com/Responses/get'
+    res = requests.post(url,data=post_data_dict)
+    res_dict=json.loads(res.text)
+
+    #將回應噗文的HTML原始碼內容和噗首原始碼自串接在一起送出
+    responses_dict_list=res_dict['responses']
+    for responses_dict in responses_dict_list:
+        content_str=responses_dict['content']
+        #排除沒有使用表符的回應
+        if "https://emos.plurk.com/" in content_str:
+            res_text+=content_str
+    #print(res_text)
+
+    return HttpResponse(res_text)
 
 #功能函數:新增組合表符
 def AddCombindEmoji(request):
