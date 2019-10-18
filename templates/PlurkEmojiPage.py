@@ -14,7 +14,7 @@ git commit -m "
 
 git push heroku master
 git push -u origin master
-
+1
 #可選指令
 heroku run python manage.py makemigrations  (可選，如果本地有新增app應用)
 heroku run  python manage.py migrate (可選，如果本地有新增app應用)

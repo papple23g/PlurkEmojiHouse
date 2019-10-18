@@ -7,10 +7,11 @@
     <title>噗浪表符庫</title>
     <!--CSS庫-->
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    
+
     <!--BRYTHON庫 online-->
-    <script async src="https://cdn.rawgit.com/brython-dev/brython/3.7.0/www/src/brython.js" ></script>
+    <script async src="https://cdn.rawgit.com/brython-dev/brython/3.7.0/www/src/brython.js"></script>
     <script async src="https://cdn.rawgit.com/brython-dev/brython/3.7.0/www/src/brython_stdlib.js"></script>
+
 
     <!-- Firebase Database-->
     <script src="https://www.gstatic.com/firebasejs/6.3.0/firebase-app.js"></script>
@@ -19,26 +20,29 @@
 
     <!--圖示圖庫-->
     <!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">-->
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+    <link async rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
 
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-135785524-1"></script>
     <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+        window.dataLayer = window.dataLayer || [];
 
-    gtag('config', 'UA-135785524-1');
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+        gtag('js', new Date());
+
+        gtag('config', 'UA-135785524-1');
     </script>
     <!-- Google Analytics END-->
 
     <!-- Google AD-->
     <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
     <script>
-    (adsbygoogle = window.adsbygoogle || []).push({
-        google_ad_client: "ca-pub-3626951597834728",
-        enable_page_level_ads: true
-    });
+        (adsbygoogle = window.adsbygoogle || []).push({
+            google_ad_client: "ca-pub-3626951597834728",
+            enable_page_level_ads: true
+        });
     </script>
     <!-- Google AD END-->
 
@@ -46,18 +50,18 @@
     <script>
         //Firebase configuration
         var firebaseConfig = {
-          apiKey: "AIzaSyDwDnYx6hEZs2_-Ms6QGHqOm5TOfDqzb_s",
-          authDomain: "nidojs-project.firebaseapp.com",
-          databaseURL: "https://nidojs-project.firebaseio.com",
-          projectId: "nidojs-project",
-          storageBucket: "",
-          messagingSenderId: "299679813499",
-          appId: "1:299679813499:web:fe6bd8ed07d89af8"
+            apiKey: "AIzaSyDwDnYx6hEZs2_-Ms6QGHqOm5TOfDqzb_s",
+            authDomain: "nidojs-project.firebaseapp.com",
+            databaseURL: "https://nidojs-project.firebaseio.com",
+            projectId: "nidojs-project",
+            storageBucket: "",
+            messagingSenderId: "299679813499",
+            appId: "1:299679813499:web:fe6bd8ed07d89af8"
         };
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
     </script>
     <!-- Initialize Firebase END-->
+    <style></style>
 
 </head>
-
