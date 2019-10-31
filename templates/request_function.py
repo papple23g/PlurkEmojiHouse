@@ -71,7 +71,7 @@ def SendRequest_searchEmoji(ev):
 
     #定義動作:顯示表符搜尋結果TABLE
     def OnComplete_searchEmoji(res):
-        print(res.text)
+        #rint(res.text)
         #清空表符結果區塊以便顯示新的結果
         doc['emoji_result_table'].clear()
         #沒有找到表符的情況

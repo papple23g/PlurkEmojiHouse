@@ -31,7 +31,7 @@ Emoji.objects.filter(id="13600").delete()
 
 
 #全域函數:版本號
-VERSION="2.2"
+VERSION="2.3"
 
 #更改網頁標題
 doc.select("head title")[0].text+=f" {VERSION}"

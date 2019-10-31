@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 '''
-from myapp.models import Emoji,CombindEmoji
+from myapp.models import *
 from myapp.views import *
 
 '''
@@ -69,11 +69,15 @@ def search_by_tag(request):
         if emoji_qlist:
             emoji=emoji_qlist[0]
             imagehash=emoji.getImagehash()
-            threshold=10
+            threshold=8
             similar_emoji_list=[]
             for emoji in Emoji.objects.all():
-                if (imagehash-emoji.getImagehash()<threshold):
-                    similar_emoji_list.append(emoji)
+                try:
+                    diff_int=imagehash-emoji.getImagehash()
+                    if (diff_int<threshold):
+                        similar_emoji_list.append(emoji)
+                except:
+                    pass
             Emoji_dict_list=EmojiDictList(similar_emoji_list,user_uid)
             return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
         #若該emoji不存在
