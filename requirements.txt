@@ -21,3 +21,5 @@ ptyprocess==0.5
 static3==0.6.1
 psycopg2==2.7.5
 django-taggit==0.23.0
+Pillow==6.2.1
+imagehash==4.0
