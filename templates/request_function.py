@@ -170,6 +170,9 @@ def SendRequest_searchTags(search_tag_str):
             span_search_result_tag_btn_elt.bind('click',SendRequest_searchEmoji)
             doc['search_tag_result']<=span_search_result_tag_btn_elt+SPAN(" ")
     
+    def Timeout_searchTags(res):
+        pass
+    
     #清空之前的搜尋結果
     doc['search_tag_result'].clear()
     req = ajax.ajax()
@@ -177,6 +180,7 @@ def SendRequest_searchTags(search_tag_str):
     url='/PlurkEmojiHouse/search_tags?search_tag=%s' %(search_tag_str)
     req.open('GET',url,True)
     req.set_header('content-type','application/x-www-form-urlencoded')
+    req.set_timeout(8000,Timeout_searchTags) ###
     req.send()
 
 #定義送出請求動作:新增表符
