@@ -86,6 +86,9 @@ def SendRequest_searchEmoji(ev):
             #若為網址新增表符動作，則清空搜尋欄文字
             if request_type=="search or add emoji by input url":
                 doc['search_tag'].value=""
+    
+    def Timeout_searchEmoji(res):
+        pass
 
     #若為表符網址，則設定url為搜尋或新增表符
     if "s.plurk.com" in search_tag_str:
@@ -108,6 +111,7 @@ def SendRequest_searchEmoji(ev):
     req.bind('loading',OnLoading_searchEmoji)
     req.open('GET',url,True)
     req.set_header('content-type','application/x-www-form-urlencoded')
+    req.set_timeout(8000,Timeout_searchEmoji)
     req.send()
 
     #若不是以頁籤進行搜尋，則進行生成頁籤按鈕請求處理
@@ -170,8 +174,7 @@ def SendRequest_searchTags(search_tag_str):
             span_search_result_tag_btn_elt.bind('click',SendRequest_searchEmoji)
             doc['search_tag_result']<=span_search_result_tag_btn_elt+SPAN(" ")
     
-    def Timeout_searchTags(res):
-        pass
+
     
     #清空之前的搜尋結果
     doc['search_tag_result'].clear()
@@ -180,7 +183,6 @@ def SendRequest_searchTags(search_tag_str):
     url='/PlurkEmojiHouse/search_tags?search_tag=%s' %(search_tag_str)
     req.open('GET',url,True)
     req.set_header('content-type','application/x-www-form-urlencoded')
-    req.set_timeout(8000,Timeout_searchTags) ###
     req.send()
 
 #定義送出請求動作:新增表符
