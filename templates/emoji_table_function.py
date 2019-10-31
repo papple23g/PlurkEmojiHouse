@@ -305,7 +305,7 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
             div_similarEmojiIcon_elt=DIV(
                 SPAN("似"),
                 Class="tag_list_action icon_similar_emoji",
-                style={"display":"none"}, ##
+                #style={"display":"none"}, ##
             ).bind("click",SearchSimilarEmoji)
             div_similarEmojiIcon_elt.emoji_id=emoji_id
             div_elt<=div_similarEmojiIcon_elt
