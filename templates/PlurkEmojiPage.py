@@ -16,10 +16,10 @@ git push heroku master
 git push -u origin master
 1
 #可選指令
-heroku run python manage.py makemigrations  (可選，如果本地有新增app應用)
-heroku run  python manage.py migrate (可選，如果本地有新增app應用)
-heroku run python manage.py createsuperuser (可選，如果本地有新增超級管理員)
-heroku run python manage.py collectstatic(可選，如果有新增static的檔案)
+heroku run python manage.py makemigrations
+heroku run  python manage.py migrate
+heroku run python manage.py createsuperuser
+heroku run python manage.py collectstatic
 
 #刪除Emoji範例
 heroku run python manage.py shell -a papple23g-mysite2
@@ -31,7 +31,7 @@ Emoji.objects.filter(id="13600").delete()
 
 
 #全域函數:版本號
-VERSION="2.2"
+VERSION="2.3"
 
 #更改網頁標題
 doc.select("head title")[0].text+=f" {VERSION}"

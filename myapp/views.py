@@ -142,12 +142,20 @@ def search_by_url(request):
         #若表符已存在，則僅將該資料回傳表符字典
         if Emoji_list:
             Emoji_dict_list=EmojiDictList(Emoji_list,user_uid=user_uid)
+            return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
         #若表符不存在，則新增該資料後再回傳表符字典
         else:
-            Emoji.objects.create(url=search_url)
-            Emoji_list=Emoji.objects.filter(url=search_url)
-            Emoji_dict_list=EmojiDictList(Emoji_list,user_uid=user_uid)
-        return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
+            try:
+                #計算圖片hash數值
+                imagehash=HashOfImage_inputUrl(search_url)
+                imagehash_str=str(imagehash)
+                Emoji.objects.create(url=search_url,imagehash_str=imagehash_str)
+                Emoji_list=Emoji.objects.filter(url=search_url)
+                Emoji_dict_list=EmojiDictList(Emoji_list,user_uid=user_uid)
+                return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
+            except:
+                return HttpResponse(u"沒有符合 "+search_url+" 的搜尋結果(網址不正確或已失效)")
+        
     else:
         return HttpResponse(u"沒有符合 "+search_url+" 的搜尋結果(網址不正確!)")
 
@@ -164,12 +172,21 @@ def search_by_url_list(request):
             #若表符已存在，則僅將該資料回傳表符字典
             if Emoji_obj_list:
                 Emoji_dict=EmojiDictList(Emoji_obj_list)[0]
+                Emoji_dict_list.append(Emoji_dict)
             #若表符不存在，則新增該資料後再回傳表符字典
             else:
-                Emoji.objects.create(url=search_url)
-                Emoji_obj_list=Emoji.objects.filter(url=search_url)
-                Emoji_dict=EmojiDictList(Emoji_obj_list)[0]
-            Emoji_dict_list.append(Emoji_dict)
+                #嘗試新增圖片，若失敗就略過 (圖片網址失效時會被略過)
+                try:
+                    #計算圖片hash數值
+                    imagehash=HashOfImage_inputUrl(search_url)
+                    imagehash_str=str(imagehash)
+                    Emoji.objects.create(url=search_url,imagehash_str=imagehash_str)
+                    Emoji_obj_list=Emoji.objects.filter(url=search_url)
+                    Emoji_dict=EmojiDictList(Emoji_obj_list)[0]
+                    Emoji_dict_list.append(Emoji_dict)
+                except:
+                    pass
+            
     if Emoji_dict_list:
         return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
     else:    
