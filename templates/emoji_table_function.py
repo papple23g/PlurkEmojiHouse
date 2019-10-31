@@ -292,13 +292,29 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
             #設置一秒後恢復tooltip訊息
             timer.set_timeout(ChangeBackCopyMsg,1000)
 
+        #定義動作:搜尋該表符的相似圖片
+        def SearchSimilarEmoji(ev):
+            emoji_id=ev.currentTarget.emoji_id
+            doc['search_tag'].value="__hash__"+str(emoji_id)
+            doc['search_tag_btn'].click()
+
         #設置複製標籤列按鈕<i class="far fa-window-maximize"></i>
         def DIV_tagListActionIconList():
             div_elt=DIV(style={'float':'right'})
+            #設置搜尋相似的表符按鈕
+            div_similarEmojiIcon_elt=DIV(
+                SPAN("似"),
+                Class="tag_list_action icon_similar_emoji",
+                style={"display":"none"},
+            ).bind("click",SearchSimilarEmoji)
+            div_similarEmojiIcon_elt.emoji_id=emoji_id
+            div_elt<=div_similarEmojiIcon_elt
+            #設置顯示/隱藏純文字標籤按鈕
             div_elt<=I(
                 Class="tag_list_action far fa-window-maximize change_tag_list_to_str",
                 title="顯示/隱藏純文字標籤"
             ).bind("click",ChangeTagListToString)
+            #設置複製所有標籤按鈕
             div_elt<=DIV_showTipText(
                 I(Class="tag_list_action far fa-copy copy_tag_list_str").bind("click",CopyTagListStr),
                 "複製所有標籤",
@@ -374,6 +390,15 @@ def TR_emoji(emoji_url,emoji_id,tag_str_list):
     )
     return com_tr
 AddStyle('''
+    .icon_similar_emoji{
+        position: relative !important;
+        float: left !important;
+        font-size: 15px !important;
+        width: 26px !important;
+        text-align: center !important;
+        padding: 0px !important;
+        font-family: 微軟正黑體 !important;
+    }
     .icon_combind_emoji{
         cursor: pointer;
     }
@@ -396,7 +421,7 @@ AddStyle('''
         border-radius: 20px;
         padding-left: 12px;
         float: left;
-        width: 50%;
+        width: 40%;
         max-width: 200px;
     }
     td.emoji_action_area,td.emoji_action_area{

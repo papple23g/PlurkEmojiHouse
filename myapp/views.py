@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+'''
+from myapp.models import Emoji,CombindEmoji
+from myapp.views import *
+
+'''
 from django.shortcuts import render
 from django.http import HttpResponse
-from myapp.models import Emoji,CombindEmoji
+from myapp.models import *
 from django.core import serializers
 import urllib2
 from taggit.models import Tag
 TAGS = Tag.objects.all()
-
 
 #定義動作:驗證和更正表符網址(v1.0)
 def Correcting_emojiUrl(emoji_url):
@@ -49,43 +53,66 @@ def EmojiDictList(Emoji_list,user_uid=None):
             Emoji_dict_list.append(Emoji_dict)
     return Emoji_dict_list
 
-#功能函數:輸入標籤，輸出表符字典串列，格式為[{"url":"...","id":[int],tags":"A,B,..."}]
+#功能函數:輸入標籤，輸出表符字典串列，格式為[{"url":"...","id":[int],"tags":"A,B,..."}]
 def search_by_tag(request):
     #獲取關鍵字與第幾頁面
     search_tag=request.GET.get('search_tag',"")
     i_page=int(request.GET.get('page','0'))
     user_uid=request.GET.get('user_uid',None)
-    #獲取搜尋清單的區間
-    num_of_emoji_per_page=int(request.GET.get('num_of_emoji_per_page',"20"))
-    i_raw_top=i_page*num_of_emoji_per_page
-    i_raw_bottom=i_raw_top+num_of_emoji_per_page
-    #空字串的搜尋預設為顯示全部表符
-    if search_tag=="":
-        Emoji_list=Emoji.objects.all().order_by("-id")[i_raw_top:i_raw_bottom]
-    #一般搜尋表符的情況    
-    else:
-        #區分逗號","分出多個標籤
-        search_tag_list=[tag.strip() for tag in search_tag.split(",") if tag!=""]
-        #進行集合篩選
-        exec('Emoji_list=Emoji.objects'+''.join(['.filter(tags__name__in=[u"'+searth_tag_i_str+'"])' for searth_tag_i_str in search_tag_list])+'.order_by("-id")')
-        Emoji_list=Emoji_list[i_raw_top:i_raw_bottom]
-    #若有找到一個以上的結果，返回表符字典串列
-    if Emoji_list:
-        Emoji_dict_list=EmojiDictList(Emoji_list,user_uid)
-        return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
-    #沒有找到結果時
-    else:
-        #若已勾選「顯示我的收藏」
-        if "__collectorUsers__" in search_tag:
-            #若是顯示全部收藏的表符但沒有結果
-            if search_tag.startswith(",__collectorUsers__"):
-                return HttpResponse(u"沒有收藏的表符哦!")
-            #若是收藏的表符中找不到標籤結果
-            else:
-                return HttpResponse(u"沒有符合 "+search_tag[:search_tag.index(",__collectorUsers__")]+u" 的搜尋結果")
-        #若未勾選「顯示我的收藏」
+
+    #若是使用hash數值搜尋相似圖片###
+    if search_tag.startswith('__hash__'):
+        #獲取指定要搜尋的emoji
+        emoji_id=search_tag[len('__hash__'):]
+        emoji_qlist=Emoji.objects.filter(id=emoji_id)
+        #若該emoji存在
+        if emoji_qlist:
+            emoji=emoji_qlist[0]
+            imagehash=emoji.getImagehash()
+            threshold=10
+            similar_emoji_list=[]
+            for emoji in Emoji.objects.all():
+                if (imagehash-emoji.getImagehash()<threshold):
+                    similar_emoji_list.append(emoji)
+            Emoji_dict_list=EmojiDictList(similar_emoji_list,user_uid)
+            return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
+        #若該emoji不存在
         else:
-            return HttpResponse(u"沒有符合 "+search_tag+u" 的搜尋結果")
+            return HttpResponse(u"沒有該圖片的搜尋結果")
+
+    #若是使用一般標籤搜尋
+    else:
+        #獲取搜尋清單的區間
+        num_of_emoji_per_page=int(request.GET.get('num_of_emoji_per_page',"20"))
+        i_raw_top=i_page*num_of_emoji_per_page
+        i_raw_bottom=i_raw_top+num_of_emoji_per_page
+        #空字串的搜尋預設為顯示全部表符
+        if search_tag=="":
+            Emoji_list=Emoji.objects.all().order_by("-id")[i_raw_top:i_raw_bottom]
+        #一般搜尋表符的情況    
+        else:
+            #區分逗號","分出多個標籤
+            search_tag_list=[tag.strip() for tag in search_tag.split(",") if tag!=""]
+            #進行集合篩選
+            exec('Emoji_list=Emoji.objects'+''.join(['.filter(tags__name__in=[u"'+searth_tag_i_str+'"])' for searth_tag_i_str in search_tag_list])+'.order_by("-id")')
+            Emoji_list=Emoji_list[i_raw_top:i_raw_bottom]
+        #若有找到一個以上的結果，返回表符字典串列
+        if Emoji_list:
+            Emoji_dict_list=EmojiDictList(Emoji_list,user_uid)
+            return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
+        #沒有找到結果時
+        else:
+            #若已勾選「顯示我的收藏」
+            if "__collectorUsers__" in search_tag:
+                #若是顯示全部收藏的表符但沒有結果
+                if search_tag.startswith(",__collectorUsers__"):
+                    return HttpResponse(u"沒有收藏的表符哦!")
+                #若是收藏的表符中找不到標籤結果
+                else:
+                    return HttpResponse(u"沒有符合 "+search_tag[:search_tag.index(",__collectorUsers__")]+u" 的搜尋結果")
+            #若未勾選「顯示我的收藏」
+            else:
+                return HttpResponse(u"沒有符合 "+search_tag+u" 的搜尋結果")
 
 #功能函數:輸入標籤，輸出表符結果頁數
 def numOfEmojiPageBtn(request):
@@ -270,5 +297,5 @@ def DeleteCombindEmoji(request):
 def SearchCombindEmoji(request):
     emoji_url=request.GET.get('emoji_url',None)
     combind_url_list=[combindEmoji.combind_url for combindEmoji in CombindEmoji.objects.filter(emoji_url_set__name__in=[emoji_url])]
-    print "emoji_url:",emoji_url,"\ncombind_url_list:",combind_url_list
+    #print "emoji_url:",emoji_url,"\ncombind_url_list:",combind_url_list
     return HttpResponse(json.dumps(combind_url_list), content_type="application/json")
