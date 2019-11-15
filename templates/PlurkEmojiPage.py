@@ -24,6 +24,7 @@ heroku run python manage.py collectstatic
 #刪除Emoji範例
 heroku run python manage.py shell -a papple23g-mysite2
 from myapp.models import Emoji
+from myapp.models import *
 Emoji.objects.filter(id="13600").delete()
 
 """
@@ -31,7 +32,7 @@ Emoji.objects.filter(id="13600").delete()
 
 
 #全域函數:版本號
-VERSION="2.3"
+VERSION="2.4"
 
 #更改網頁標題
 doc.select("head title")[0].text+=f" {VERSION}"
@@ -335,9 +336,21 @@ def DIV_subpage_searchEmoji():
         id="div_showCollectEmojis",
         style={"float":"left"}
     ).bind("click",onclick_div_showCollectEmojis)
+    
     #綁定勾選元素變動時，會自動按下搜尋(自動刷新)，並交由後續判斷是否要搜尋已收藏的表符 (非登入者無法勾選)
     checkbox_showCollectEmojis_elt=div_showCollectEmojis_inputCheckbox.select('input')[0]
     checkbox_showCollectEmojis_elt.bind("change",lambda ev:doc['search_tag_btn'].click())
+
+    #設置「組合表符」勾選DIV元素
+    div_showCombindEmojis_inputCheckbox=DIV(
+        A_INPUTCheckbox(" 組合表符",id="checkbox_showCombindEmojis"),
+        id="div_showCombindEmojis",
+        style={"float":"left"}
+    )
+    
+    #綁定勾選元素變動時，會自動按下搜尋(自動刷新)
+    checkbox_showCombindEmojis_elt=div_showCombindEmojis_inputCheckbox.select('input')[0]
+    checkbox_showCombindEmojis_elt.bind("change",lambda ev:doc['search_tag_btn'].click())
 
     #設置表符出現樣式DIV元素
     def DIV_EmojiTableStyleSwitch():
@@ -384,6 +397,9 @@ def DIV_subpage_searchEmoji():
         div_elt<=btn_listTable
         return div_elt
     AddStyle('''
+    #div_showCombindEmojis{
+        margin-left: 15px;
+    }
     #div_emojiTableStyleSwitch i{
         padding: 5px 10px;
         margin: 0 -1px;
@@ -403,14 +419,11 @@ def DIV_subpage_searchEmoji():
 
     ''')
 
-    
+
+    #搜尋設定區塊排版
     div_search_setting_elt<=div_showCollectEmojis_inputCheckbox
+    div_search_setting_elt<=div_showCombindEmojis_inputCheckbox
     div_search_setting_elt<=DIV_EmojiTableStyleSwitch()
-
-
-
-
-    #排版
     
     div_card_elt<=div_search_setting_elt
 

@@ -3,14 +3,18 @@ from __future__ import unicode_literals
 
 '''
 from myapp.models import *
+from taggit.models import Tag
 from myapp.views import *
 
 '''
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.db.models import Q
+
 from myapp.models import *
 from django.core import serializers
 import urllib2
+
 from taggit.models import Tag
 TAGS = Tag.objects.all()
 
@@ -60,7 +64,7 @@ def search_by_tag(request):
     i_page=int(request.GET.get('page','0'))
     user_uid=request.GET.get('user_uid',None)
 
-    #若是使用hash數值搜尋相似圖片###
+    #若是使用hash數值搜尋相似圖片
     if search_tag.startswith('__hash__'):
         #獲取指定要搜尋的emoji
         emoji_id=search_tag[len('__hash__'):]
@@ -90,15 +94,30 @@ def search_by_tag(request):
         num_of_emoji_per_page=int(request.GET.get('num_of_emoji_per_page',"20"))
         i_raw_top=i_page*num_of_emoji_per_page
         i_raw_bottom=i_raw_top+num_of_emoji_per_page
+        
+        #設置表符模組物件
+        Emoji_objects=Emoji.objects
+
+        #獲取是否勾選組合表符
+        search_in_combindEmoji_bool=(",__showCombindEmojis__" in search_tag)
+        #若有勾選組合表符
+        if search_in_combindEmoji_bool:
+            #則將關鍵字標籤去除避免錯誤發生
+            search_tag=search_tag.replace(",__showCombindEmojis__","")
+            #獲取所有組合表符的emoji_url
+            combind_emoji_url_list=list(set(tag.name for tag in Tag.objects.filter(name__icontains="https://emos.plurk.com/")))
+            #獲取為組合表符的emoji_qlist
+            Emoji_objects=Emoji.objects.filter(reduce(lambda x, y: x | y, [Q(url=combind_emoji_url) for combind_emoji_url in combind_emoji_url_list]))
+        
         #空字串的搜尋預設為顯示全部表符
         if search_tag=="":
-            Emoji_list=Emoji.objects.all().order_by("-id")[i_raw_top:i_raw_bottom]
+            Emoji_list=Emoji_objects.all().order_by("-id")[i_raw_top:i_raw_bottom]
         #一般搜尋表符的情況    
         else:
             #區分逗號","分出多個標籤
             search_tag_list=[tag.strip() for tag in search_tag.split(",") if tag!=""]
             #進行集合篩選
-            exec('Emoji_list=Emoji.objects'+''.join(['.filter(tags__name__in=[u"'+searth_tag_i_str+'"])' for searth_tag_i_str in search_tag_list])+'.order_by("-id")')
+            exec('Emoji_list=Emoji_objects'+''.join(['.filter(tags__name__in=[u"'+searth_tag_i_str+'"])' for searth_tag_i_str in search_tag_list])+'.order_by("-id")')
             Emoji_list=Emoji_list[i_raw_top:i_raw_bottom]
         #若有找到一個以上的結果，返回表符字典串列
         if Emoji_list:
@@ -123,15 +142,31 @@ def numOfEmojiPageBtn(request):
     num_of_emoji_per_page=int(request.GET.get('num_of_emoji_per_page',"20"))
     #獲取表符列表
     search_tag=request.GET.get('search_tag',"")
+
+    #設置表符模組物件
+    Emoji_objects=Emoji.objects
+
+    #獲取是否勾選組合表符
+    search_in_combindEmoji_bool=(",__showCombindEmojis__" in search_tag)
+    #若有勾選組合表符
+    if search_in_combindEmoji_bool:
+        #則將關鍵字標籤去除避免錯誤發生
+        search_tag=search_tag.replace(",__showCombindEmojis__","")
+        #獲取所有組合表符的emoji_url
+        combind_emoji_url_list=list(set(tag.name for tag in Tag.objects.filter(name__icontains="https://emos.plurk.com/")))
+        #獲取為組合表符的emoji_qlist
+        Emoji_objects=Emoji_objects.filter(reduce(lambda x, y: x | y, [Q(url=combind_emoji_url) for combind_emoji_url in combind_emoji_url_list]))
+
+
     #若表符列表為空字串，則計算全部表符需要幾頁
     if search_tag=="":
-        num_of_btn=(Emoji.objects.count()-1)/num_of_emoji_per_page +1
+        num_of_btn=(Emoji_objects.count()-1)/num_of_emoji_per_page +1
     #若表符列表不為空字串，則計算搜尋結果全部表符需要幾頁
     else:
          #區分逗號","分出多個標籤
         search_tag_list=[tag.strip() for tag in search_tag.split(",") if tag!=""]
         #進行集合篩選
-        exec('Emoji_list=Emoji.objects'+''.join(['.filter(tags__name__in=[u"'+searth_tag_i_str+'"])' for searth_tag_i_str in search_tag_list])+'.order_by("-id")')
+        exec('Emoji_list=Emoji_objects'+''.join(['.filter(tags__name__in=[u"'+searth_tag_i_str+'"])' for searth_tag_i_str in search_tag_list])+'.order_by("-id")')
         num_of_btn=(len(Emoji_list)-1)/num_of_emoji_per_page +1
     return HttpResponse(num_of_btn)
     
@@ -246,8 +281,8 @@ def search_tags(request):
     for search_tag in search_tag_list:
         #將有包含關鍵字的標籤放入tags_list
         tags_list_QuerySet=TAGS.filter(name__icontains=search_tag)
-        #過濾標籤搜尋結果:去除含有使用者收藏標籤的開頭關鍵字
-        tags_list_QuerySet=[tag for tag in tags_list_QuerySet if ("__collectorUsers__" not in tag.name)]
+        #過濾標籤搜尋結果:去除含有使用者收藏標籤的開頭關鍵字以及去除組合表符網址標籤
+        tags_list_QuerySet=[tag for tag in tags_list_QuerySet if ("__collectorUsers__" not in tag.name) and ("https://emos.plurk.com/" not in tag.name)]
         for tag in tags_list_QuerySet:
             if tag not in tags_list: #不納入重複的標籤
                 tags_list.append(tag.name)

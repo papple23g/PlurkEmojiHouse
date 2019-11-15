@@ -99,8 +99,13 @@ def SendRequest_searchEmoji(ev):
     #獲取使用者uid (若尚未登入則為None)
     user_uid=window.firebase.auth().currentUser.uid if window.firebase.auth().currentUser else None
 
+    #若使用者已登入且已勾選 顯示我的收藏 則加入關鍵字標籤進去搜尋欄
     if user_uid and doc['checkbox_showCollectEmojis'].checked:
         search_tag_str+=f",__collectorUsers__{user_uid}"
+
+    #若使用者勾選 組合表符 則加入關鍵字標籤進去搜尋欄
+    if doc['checkbox_showCombindEmojis'].checked:
+        search_tag_str+=",__showCombindEmojis__"
 
     #根據不同搜尋方式設定request
     if request_type=="search or add emoji by input url":
