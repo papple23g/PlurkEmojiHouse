@@ -35,8 +35,9 @@ from PIL import Image # python -m pip install Pillow
 import imagehash
 from io import BytesIO
 import requests as req
+import certifi
 #定義函數:輸入圖片網址計算hash數值
 def HashOfImage_inputUrl(img_src):
-    response = req.get(img_src)
+    response = req.get(img_src, verify=certifi.where())
     image = Image.open(BytesIO(response.content))
     return imagehash.average_hash(image)

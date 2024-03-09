@@ -300,11 +300,12 @@ def NumOfEmoji_and_NumOfTag(request):
 
 #功能函數，用爬蟲獲取噗文網址的原始碼
 import requests
+import certifi
 def PlurkUrlHtml(request):
     #獲取噗首原始碼以及該噗文的ID
     plurk_url=request.GET.get('plurk_url',None)
     headers={"User-Agent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8 GTB7.1 (.NET CLR 3.5.30729)", "Referer": "http://example.com"}
-    res=requests.get(plurk_url, headers=headers, timeout=10)
+    res=requests.get(plurk_url, headers=headers, timeout=10, verify=certifi.where())
     res_text=res.text
     plurk_id_sandStr=', "plurk_id": '
     res_text_plurkIdSandStr_i=res_text.index(plurk_id_sandStr)
