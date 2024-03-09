@@ -10,7 +10,7 @@ pyScss==1.4.0
 pytz==2018.4
 requests
 six==1.5.2
-urllib3==1.7.1
+urllib3
 virtualenv==1.11.6
 dj-static==0.0.6
 static3==0.6.1
