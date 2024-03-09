@@ -14,7 +14,7 @@ urllib3
 virtualenv==1.11.6
 dj-static==0.0.6
 static3==0.6.1
-gunicorn==19.3.0
+gunicorn
 path.py==8.1.2
 ptyprocess==0.5
 static3==0.6.1
