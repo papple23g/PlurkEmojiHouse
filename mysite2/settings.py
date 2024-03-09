@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-#for chinese path
-import sys
-reload(sys)
-sys.setdefaultencoding("utf-8")
+# for chinese path
+# import sys
+# reload(sys)
+# sys.setdefaultencoding("utf-8")
 
 """
 Django settings for mysite2 project.

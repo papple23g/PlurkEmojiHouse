@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from functools import reduce
+
 '''
 from myapp.models import *
 from taggit.models import Tag
 from myapp.views import *
 
 '''
-from django.shortcuts import render
-from django.http import HttpResponse
 from django.db.models import Q
-
-from myapp.models import *
-from django.core import serializers
-import urllib2
-
+from django.http import HttpResponse
+from django.shortcuts import render
 from taggit.models import Tag
+
+from myapp.models import CombindEmoji, Emoji, HashOfImage_inputUrl
+
 TAGS = Tag.objects.all()
 
 #定義動作:驗證和更正表符網址(v1.0)
@@ -36,8 +36,10 @@ def Correcting_emojiUrl(emoji_url):
 def PlurkEmojiHouse(request):
     return render(request,"PlurkEmojiHouse.html",)
 
-from django.forms.models import model_to_dict
 import json
+
+from django.forms.models import model_to_dict
+
 
 #定義動作，將QuerySet形式的表符串列轉化成字典串列，一個字典的key包含id,url,tags，其中tags內的標籤之間用逗號區隔
 #會根據user_uid過濾tags : 去除含有收藏標籤開頭(__collectorUsers__)的標籤，但將符合user_uid的收藏標籤則轉為"__be_collected__"標籤，讓前端去處理
@@ -117,8 +119,7 @@ def search_by_tag(request):
             #區分逗號","分出多個標籤
             search_tag_list=[tag.strip() for tag in search_tag.split(",") if tag!=""]
             #進行集合篩選
-            exec('Emoji_list=Emoji_objects'+''.join(['.filter(tags__name__in=[u"'+searth_tag_i_str+'"])' for searth_tag_i_str in search_tag_list])+'.order_by("-id")')
-            Emoji_list=Emoji_list[i_raw_top:i_raw_bottom]
+            Emoji_list = Emoji_objects.filter(reduce(lambda x, y: x & y, [Q(tags__name__in=[searth_tag_i_str]) for searth_tag_i_str in search_tag_list])).order_by("-id")[i_raw_top:i_raw_bottom]
         #若有找到一個以上的結果，返回表符字典串列
         if Emoji_list:
             Emoji_dict_list=EmojiDictList(Emoji_list,user_uid)
@@ -166,7 +167,7 @@ def numOfEmojiPageBtn(request):
          #區分逗號","分出多個標籤
         search_tag_list=[tag.strip() for tag in search_tag.split(",") if tag!=""]
         #進行集合篩選
-        exec('Emoji_list=Emoji_objects'+''.join(['.filter(tags__name__in=[u"'+searth_tag_i_str+'"])' for searth_tag_i_str in search_tag_list])+'.order_by("-id")')
+        Emoji_list=Emoji_objects.filter(reduce(lambda x, y: x & y, [Q(tags__name__in=[searth_tag_i_str]) for searth_tag_i_str in search_tag_list])).order_by("-id")
         num_of_btn=(len(Emoji_list)-1)/num_of_emoji_per_page +1
     return HttpResponse(num_of_btn)
     
@@ -192,8 +193,11 @@ def search_by_url(request):
                 Emoji_list=Emoji.objects.filter(url=search_url)
                 Emoji_dict_list=EmojiDictList(Emoji_list,user_uid=user_uid)
                 return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
-            except:
+            except Exception as e:
+                print(f"{e!r}")
                 return HttpResponse(u"沒有符合 "+search_url+" 的搜尋結果(網址不正確或已失效)")
+            
+            
         
     else:
         return HttpResponse(u"沒有符合 "+search_url+" 的搜尋結果(網址不正確!)")
@@ -299,8 +303,10 @@ def NumOfEmoji_and_NumOfTag(request):
 
 
 #功能函數，用爬蟲獲取噗文網址的原始碼
-import requests
 import certifi
+import requests
+
+
 def PlurkUrlHtml(request):
     #獲取噗首原始碼以及該噗文的ID
     plurk_url=request.GET.get('plurk_url',None)
