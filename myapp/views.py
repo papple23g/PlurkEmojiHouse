@@ -169,7 +169,7 @@ def numOfEmojiPageBtn(request):
         #進行集合篩選
         Emoji_list=Emoji_objects.filter(reduce(lambda x, y: x & y, [Q(tags__name__in=[searth_tag_i_str]) for searth_tag_i_str in search_tag_list])).order_by("-id")
         num_of_btn=(len(Emoji_list)-1)/num_of_emoji_per_page +1
-    return HttpResponse(num_of_btn)
+    return HttpResponse(int(num_of_btn))
     
     
 #功能函數，增加表符
