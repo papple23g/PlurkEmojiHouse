@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import json
-import requests
-import certifi
-from django.forms.models import model_to_dict
 
+import json
 from functools import reduce
+
+import certifi
+import requests
+from django.forms.models import model_to_dict
 
 '''
 from myapp.models import *
@@ -186,12 +187,18 @@ def numOfEmojiPageBtn(request):
     # 若表符列表不為空字串，則計算搜尋結果全部表符需要幾頁
     else:
         # 區分逗號","分出多個標籤
-        search_tag_list = [tag.strip()
-                           for tag in search_tag.split(",") if tag != ""]
+        search_tag_str_set = {
+            tag.strip()
+            for tag in search_tag.split(",") if tag != ""
+        }
         # 進行集合篩選
-        Emoji_list = Emoji_objects.filter(reduce(lambda x, y: x & y, [Q(tags__name__in=[
-                                          searth_tag_i_str]) for searth_tag_i_str in search_tag_list])).order_by("-id")
-        num_of_btn = (len(Emoji_list)-1)/num_of_emoji_per_page + 1
+        Emoji_list_count = (
+            Emoji_objects.filter(tags__name__in=search_tag_str_set)
+            .annotate(num_tags=Count('tags'))
+            .filter(num_tags=len(search_tag_str_set))
+            .count()
+        )
+        num_of_btn = (Emoji_list_count-1)/num_of_emoji_per_page + 1
     return HttpResponse(int(num_of_btn))
 
 
