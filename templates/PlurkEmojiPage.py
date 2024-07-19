@@ -1,38 +1,5 @@
-"""
-#啟動測試指令
-cd "C:\Users\Peter Wang\Google Drive\mysite2"
-python2 manage.py runserver 0.0.0.0:8001
-
-cd "C:\Users\pappl\Google Drive\mysite2"
-python manage.py runserver 0.0.0.0:8000
-
-#更新上傳指令
-cd "C:\Users\Peter Wang\Google Drive\mysite2"
-cd "C:\Users\pappl\Google Drive\mysite2"
-git add .
-git commit -m "
-
-git push heroku master
-git push -u origin master
-1
-#可選指令
-heroku run python manage.py makemigrations
-heroku run  python manage.py migrate
-heroku run python manage.py createsuperuser
-heroku run python manage.py collectstatic
-
-#刪除Emoji範例
-heroku run python manage.py shell -a papple23g-mysite2
-from myapp.models import Emoji
-from myapp.models import *
-Emoji.objects.filter(id="13600").delete()
-
-"""
-
-
-
 #全域函數:版本號
-VERSION="2.4"
+VERSION="2.6"
 
 #更改網頁標題
 doc.select("head title")[0].text+=f" {VERSION}"
