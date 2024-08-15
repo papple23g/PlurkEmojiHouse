@@ -137,8 +137,10 @@ def Correcting_emojiUrl(emoji_url):
 def getEmojiUrlListFromHtml(html_str):
     div_elt=DIV()
     div_elt.innerHTML=html_str
-    img_emoji_elt_list=[img_elt for img_elt in div_elt.select('img') if "https://emos.plurk.com/" in img_elt.src]
-    emoji_url_list=list(set(img_elt.src for img_elt in img_emoji_elt_list))
+    emoji_url_list=[]
+    for img_elt in div_elt.select('img'):
+        if "https://emos.plurk.com/" in img_elt.src and img_elt.src not in emoji_url_list:
+            emoji_url_list.append(img_elt.src)
     div_elt.clear()
     return emoji_url_list
 
