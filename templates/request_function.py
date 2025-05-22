@@ -16,11 +16,7 @@ def BUTTON_emijiPage_elt(num_of_emoji_page,search_tag_str):
     btn_elt.bind("click",SendRequest_searchEmoji)
     btn_elt.bind("click",BUTTONEmijiPageEltPressed)
     return btn_elt
-AddStyle('''
-    .emoji_page_btn_press{
-        background-color:#aaa;
-    }
-''')
+# Initial AddStyle is removed here and consolidated below
 
 
 #*搜尋表符並顯示結果*
@@ -122,7 +118,7 @@ def SendRequest_searchEmoji(ev):
 
     #若不是以頁籤進行搜尋，則進行生成頁籤按鈕請求處理
     if request_type!="search emoji by click page button":
-        SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page)
+        SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page,page)
     
     #若是輸入標籤搜尋或點擊標籤搜尋，就搜尋相似的標籤 (排除空白關鍵字)
     if search_tag_str.strip():
@@ -130,7 +126,7 @@ def SendRequest_searchEmoji(ev):
             SendRequest_searchTags(search_tag_str)
 
 #定義請求動作:顯示表符搜尋結果的頁籤按鈕
-def SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page):
+def SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page, current_page_num):
     #先顯示並清空頁籤按鈕區塊
     doc['emoji_page_btns'].classList.remove('hidden')
     doc['emoji_page_btns'].clear()
@@ -138,15 +134,75 @@ def SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page):
 
     #定義動作:顯示表符搜尋結果的頁籤按鈕
     def OnComplete_insertEmojiPageBtn(res):
-        #再次清空頁籤按鈕區塊(防止出現重複置入按鈕的請況)
-        doc['emoji_page_btns'].clear()
+        doc['emoji_page_btns'].clear() # Ensure it's clear before adding new buttons
 
-        num_of_emoji_page_btn=int(res.text)
-        for num_of_emoji_page in range(1,num_of_emoji_page_btn+1):
-            doc['emoji_page_btns']<=BUTTON_emijiPage_elt(num_of_emoji_page,search_tag_str)
-        #預設第一個頁籤按鈕為按下的狀態(僅會在「搜尋表符」子頁面下發揮作用)
-        if doc['emoji_page_btns'].select("#emoji_page_btns > button:nth-child(1)"):
-            doc['emoji_page_btns'].select("#emoji_page_btns > button:nth-child(1)")[0].classList.add('emoji_page_btn_press')
+        total_pages = int(res.text)
+        # current_page_num is already 0-indexed as passed to SendRequest_insertEmojiPageBtn
+        current_page = current_page_num 
+
+        if total_pages <= 0: # No pages to display
+            doc['emoji_page_btns'].classList.add('hidden') # Hide if no pages
+            return
+        else:
+            doc['emoji_page_btns'].classList.remove('hidden')
+
+
+        # Helper function to create navigation buttons
+        def CREATE_NAV_BUTTON(text, target_page, search_tag, is_disabled):
+            # Shared click handler for styling (from BUTTON_emijiPage_elt)
+            def BUTTONEmijiPageEltPressed(ev):
+                btn_elt_list=doc['emoji_page_btns'].select('button')
+                for btn_elt in btn_elt_list:
+                    btn_elt.classList.remove("emoji_page_btn_press")
+                # Check if currentTarget exists and has classList before trying to add class
+                if hasattr(ev.currentTarget, 'classList'):
+                    ev.currentTarget.classList.add("emoji_page_btn_press")
+
+            btn = BUTTON(text, Class="emoji_page_btn", disabled=is_disabled)
+            btn.search_tag = search_tag
+            btn.target_page_num = target_page 
+            btn.is_nav_btn = True # Flag for SendRequest_searchEmoji
+            btn.bind("click", SendRequest_searchEmoji)
+            btn.bind("click", BUTTONEmijiPageEltPressed)
+            return btn
+
+        context_pages_display = 2
+
+        # "First" button
+        first_btn = CREATE_NAV_BUTTON("First", 0, search_tag_str, current_page == 0)
+        doc['emoji_page_btns'] <= first_btn
+
+        # "Previous" button
+        prev_btn = CREATE_NAV_BUTTON("Previous", current_page - 1, search_tag_str, current_page == 0)
+        doc['emoji_page_btns'] <= prev_btn
+
+        # Numbered Page Buttons
+        start_page = max(0, current_page - context_pages_display)
+        end_page = min(total_pages - 1, current_page + context_pages_display)
+
+        # Ellipsis before
+        if start_page > 0:
+            doc['emoji_page_btns'] <= SPAN("...", Class="emoji_page_ellipsis")
+
+        for i in range(start_page, end_page + 1):
+            # BUTTON_emijiPage_elt expects 1-indexed page num for text and its internal logic
+            page_btn = BUTTON_emijiPage_elt(i + 1, search_tag_str) 
+            if i == current_page:
+                page_btn.classList.add("emoji_page_btn_press") # Highlight current page
+            doc['emoji_page_btns'] <= page_btn
+        
+        # Ellipsis after
+        if end_page < total_pages - 1:
+            doc['emoji_page_btns'] <= SPAN("...", Class="emoji_page_ellipsis")
+
+        # "Next" button
+        next_btn = CREATE_NAV_BUTTON("Next", current_page + 1, search_tag_str, current_page == total_pages - 1)
+        doc['emoji_page_btns'] <= next_btn
+
+        # "Last" button
+        last_btn = CREATE_NAV_BUTTON("Last", total_pages - 1, search_tag_str, current_page == total_pages - 1)
+        doc['emoji_page_btns'] <= last_btn
+        
     url=f'/PlurkEmojiHouse/numOfEmojiPageBtn?search_tag={search_tag_str}&num_of_emoji_per_page={num_of_emoji_per_page}'
     req = ajax.ajax()
     req.bind('complete',OnComplete_insertEmojiPageBtn)
