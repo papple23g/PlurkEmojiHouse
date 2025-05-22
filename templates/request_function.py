@@ -42,11 +42,16 @@ def SendRequest_searchEmoji(ev):
         doc['search_tag'].value=""
         doc['search_tag_result'].clear()
         request_type="search emoji by click show all"
-    #使用頁籤按鈕時，從按鈕物件上提取關鍵字，並抓取欲搜尋的頁次數字
-    elif "emoji_page_btn" in ev.currentTarget.classList:
+    # This handles clicks from both numbered page buttons and navigation buttons (First, Prev, Next, Last)
+    elif hasattr(ev.currentTarget, 'is_nav_btn') or "emoji_page_btn" in ev.currentTarget.classList: 
         btn_elt=ev.currentTarget
-        search_tag_str=btn_elt.search_tag
-        page=int(btn_elt.text)-1
+        search_tag_str=btn_elt.search_tag # search_tag is set on both types of buttons
+
+        if hasattr(btn_elt, 'target_page_num'): # Check if it's a navigation button (set by CREATE_NAV_BUTTON)
+            page=btn_elt.target_page_num
+        else: # Otherwise, it's a numbered page button (created by BUTTON_emijiPage_elt)
+            page=int(btn_elt.text)-1
+        
         request_type="search emoji by click page button"
     #使用標籤搜尋時，從標籤物件上提取關鍵字
     elif ev.currentTarget.className=="tag_btn":
@@ -166,8 +171,6 @@ def SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page, current
             btn.bind("click", BUTTONEmijiPageEltPressed)
             return btn
 
-        context_pages_display = 2
-
         # "First" button
         first_btn = CREATE_NAV_BUTTON("First", 0, search_tag_str, current_page == 0)
         doc['emoji_page_btns'] <= first_btn
@@ -176,27 +179,43 @@ def SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page, current
         prev_btn = CREATE_NAV_BUTTON("Previous", current_page - 1, search_tag_str, current_page == 0)
         doc['emoji_page_btns'] <= prev_btn
 
-        # Numbered Page Buttons
-        start_page = max(0, current_page - context_pages_display)
-        end_page = min(total_pages - 1, current_page + context_pages_display)
+        # New Numbered Page Buttons Logic
+        pages_to_display_set = set()
 
-        # Ellipsis before
-        if start_page > 0:
-            doc['emoji_page_btns'] <= SPAN("...", Class="emoji_page_ellipsis")
-
-        for i in range(start_page, end_page + 1):
-            # BUTTON_emijiPage_elt expects 1-indexed page num for text and its internal logic
-            page_btn = BUTTON_emijiPage_elt(i + 1, search_tag_str) 
-            if i == current_page:
-                page_btn.classList.add("emoji_page_btn_press") # Highlight current page
-            doc['emoji_page_btns'] <= page_btn
+        # Add first three pages
+        for i in range(3):
+            if i < total_pages:
+                pages_to_display_set.add(i)
         
-        # Ellipsis after
-        if end_page < total_pages - 1:
-            doc['emoji_page_btns'] <= SPAN("...", Class="emoji_page_ellipsis")
+        # Add last three pages
+        for i in range(3):
+            page_num = total_pages - 1 - i
+            if page_num >= 0:
+                pages_to_display_set.add(page_num)
+
+        # Add current page and its direct neighbors
+        pages_to_display_set.add(current_page)
+        if current_page - 1 >= 0:
+            pages_to_display_set.add(current_page - 1)
+        if current_page + 1 < total_pages:
+            pages_to_display_set.add(current_page + 1)
+            
+        sorted_page_numbers = sorted(list(pages_to_display_set))
+
+        last_rendered_page = -1
+        for page_idx in sorted_page_numbers:
+            if page_idx > last_rendered_page + 1:
+                doc['emoji_page_btns'] <= SPAN("...", Class="emoji_page_ellipsis")
+            
+            # BUTTON_emijiPage_elt expects 1-indexed page num for text
+            page_button = BUTTON_emijiPage_elt(page_idx + 1, search_tag_str)
+            if page_idx == current_page: # current_page is current_page_num (0-indexed)
+                page_button.classList.add("emoji_page_btn_press")
+            doc['emoji_page_btns'] <= page_button
+            last_rendered_page = page_idx
 
         # "Next" button
-        next_btn = CREATE_NAV_BUTTON("Next", current_page + 1, search_tag_str, current_page == total_pages - 1)
+        next_btn = CREATE_NAV_BUTTON("Next", current_page + 1, search_tag_str, current_page >= total_pages - 1)
         doc['emoji_page_btns'] <= next_btn
 
         # "Last" button
