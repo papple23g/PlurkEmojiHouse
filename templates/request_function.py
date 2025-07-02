@@ -2,11 +2,14 @@
 負責處理搜尋請求相關的函式
 """
 
+# 全局變量來追蹤當前頁面
+current_emoji_page = 1
+
 #定義頁籤按鈕，在生成時吸收(附加屬性)搜尋關鍵字
 def BUTTON_emijiPage_elt(num_of_emoji_page,search_tag_str):
     #定義頁籤按鈕被按下時，套用被按下的樣式，並解除其它為未被按下的頁籤樣式
     def BUTTONEmijiPageEltPressed(ev):
-        btn_elt_list=doc['emoji_page_btns'].select('button')
+        btn_elt_list=doc['emoji_page_btns'].select('button.emoji_page_btn')
         for btn_elt in btn_elt_list:
             btn_elt.classList.remove("emoji_page_btn_press")
         ev.currentTarget.classList.add("emoji_page_btn_press")
@@ -16,15 +19,198 @@ def BUTTON_emijiPage_elt(num_of_emoji_page,search_tag_str):
     btn_elt.bind("click",SendRequest_searchEmoji)
     btn_elt.bind("click",BUTTONEmijiPageEltPressed)
     return btn_elt
+
+#定義上一頁按鈕
+def BUTTON_prevPage_elt(current_page, search_tag_str):
+    def PrevPagePressed(ev):
+        if current_page > 1:
+            # 創建一個模擬的事件對象來觸發搜索
+            mock_btn = type('MockButton', (), {})()
+            mock_btn.classList = ["emoji_page_btn"]
+            mock_btn.search_tag = search_tag_str
+            mock_btn.text = str(current_page - 1)
+            
+            # 創建模擬事件
+            mock_event = type('MockEvent', (), {})()
+            mock_event.currentTarget = mock_btn
+            
+            SendRequest_searchEmoji(mock_event)
+    
+    btn_elt = BUTTON("‹ 上一頁", Class="emoji_nav_btn prev_btn")
+    if current_page <= 1:
+        btn_elt.classList.add("disabled")
+        btn_elt.disabled = True
+    btn_elt.bind("click", PrevPagePressed)
+    return btn_elt
+
+#定義下一頁按鈕
+def BUTTON_nextPage_elt(current_page, total_pages, search_tag_str):
+    def NextPagePressed(ev):
+        if current_page < total_pages:
+            # 創建一個模擬的事件對象來觸發搜索
+            mock_btn = type('MockButton', (), {})()
+            mock_btn.classList = ["emoji_page_btn"]
+            mock_btn.search_tag = search_tag_str
+            mock_btn.text = str(current_page + 1)
+            
+            # 創建模擬事件
+            mock_event = type('MockEvent', (), {})()
+            mock_event.currentTarget = mock_btn
+            
+            SendRequest_searchEmoji(mock_event)
+    
+    btn_elt = BUTTON("下一頁 ›", Class="emoji_nav_btn next_btn")
+    if current_page >= total_pages:
+        btn_elt.classList.add("disabled")
+        btn_elt.disabled = True
+    btn_elt.bind("click", NextPagePressed)
+    return btn_elt
+
+#定義省略號元素
+def SPAN_ellipsis_elt():
+    return SPAN("...", Class="emoji_pagination_ellipsis")
+
+#計算智能分頁顯示的頁碼列表
+def get_smart_pagination_pages(current_page, total_pages):
+    if total_pages <= 9:
+        # 如果總頁數不超過9頁，顯示全部
+        return list(range(1, total_pages + 1))
+    
+    pages = set()
+    
+    # 總是包含第1-3頁
+    pages.update([1, 2, 3])
+    
+    # 總是包含最後3頁
+    pages.update([total_pages - 2, total_pages - 1, total_pages])
+    
+    # 包含當前頁面及其前後3頁
+    for i in range(max(1, current_page - 3), min(total_pages + 1, current_page + 4)):
+        pages.add(i)
+    
+    # 轉換為排序列表
+    pages_list = sorted(list(pages))
+    
+    # 插入省略號
+    result = []
+    prev_page = 0
+    
+    for page in pages_list:
+        if page > prev_page + 1:
+            result.append("...")
+        result.append(page)
+        prev_page = page
+    
+    return result
 AddStyle('''
-    .emoji_page_btn_press{
-        background-color:#aaa;
+    /* 分頁容器樣式 */
+    #emoji_page_btns {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin: 20px 0;
+        padding: 0 20px;
+        flex-wrap: wrap;
+    }
+    
+    /* 基本按鈕樣式 */
+    .emoji_page_btn, .emoji_nav_btn {
+        min-width: 40px;
+        height: 40px;
+        border: 2px solid #ddd;
+        background: #fff;
+        color: #333;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 14px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        padding: 0 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* 懸停效果 */
+    .emoji_page_btn:hover, .emoji_nav_btn:hover {
+        background: #f0f8ff;
+        border-color: #79aec8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* 當前頁面按鈕樣式 */
+    .emoji_page_btn_press {
+        background: #79aec8 !important;
+        color: #fff !important;
+        border-color: #79aec8 !important;
+        box-shadow: 0 4px 12px rgba(121, 174, 200, 0.3) !important;
+    }
+    
+    /* 上一頁/下一頁按鈕樣式 */
+    .emoji_nav_btn {
+        background: #79aec8;
+        color: #fff;
+        border-color: #79aec8;
+        min-width: 80px;
+    }
+    
+    .emoji_nav_btn:hover:not(:disabled) {
+        background: #036;
+        border-color: #036;
+    }
+    
+    .emoji_nav_btn:disabled {
+        background: #ccc;
+        color: #666;
+        border-color: #ccc;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    
+    .emoji_nav_btn:disabled:hover {
+        transform: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* 省略號樣式 */
+    .emoji_pagination_ellipsis {
+        color: #666;
+        font-weight: bold;
+        padding: 0 8px;
+        display: inline-flex;
+        align-items: center;
+        height: 40px;
+    }
+    
+    /* 響應式設計 */
+    @media only screen and (max-width: 600px) {
+        #emoji_page_btns {
+            gap: 4px;
+            padding: 0 10px;
+        }
+        
+        .emoji_page_btn, .emoji_nav_btn {
+            min-width: 35px;
+            height: 35px;
+            font-size: 12px;
+            padding: 0 8px;
+        }
+        
+        .emoji_nav_btn {
+            min-width: 70px;
+        }
     }
 ''')
 
 
 #*搜尋表符並顯示結果*
 def SendRequest_searchEmoji(ev):
+    global current_emoji_page
+    
     page=0 #頁籤預設為第一頁
     request_type=None #搜尋方式變數
     num_of_emoji_per_page=None
@@ -39,10 +225,12 @@ def SendRequest_searchEmoji(ev):
     #使用搜尋欄時，抓取搜尋框的文字
     if ev.currentTarget.id=="search_tag_btn":
         search_tag_str=doc['search_tag'].value.strip()
+        current_emoji_page = 1  # 重置到第一頁
         request_type="search emoji by input tag"
     #使用[全部顯示]時，關鍵字為空白並清空搜尋欄和相似標籤結果
     elif ev.currentTarget.id=="show_all_emoji_btn":
         search_tag_str=""
+        current_emoji_page = 1  # 重置到第一頁
         doc['search_tag'].value=""
         doc['search_tag_result'].clear()
         request_type="search emoji by click show all"
@@ -51,16 +239,19 @@ def SendRequest_searchEmoji(ev):
         btn_elt=ev.currentTarget
         search_tag_str=btn_elt.search_tag
         page=int(btn_elt.text)-1
+        current_emoji_page = int(btn_elt.text)  # 更新全局當前頁面
         request_type="search emoji by click page button"
     #使用標籤搜尋時，從標籤物件上提取關鍵字
     elif ev.currentTarget.className=="tag_btn":
         search_tag_str=ev.currentTarget.text
+        current_emoji_page = 1  # 重置到第一頁
         request_type="search emoji by click tag in emoji tag list"
         #點擊一下[搜尋表符]，確保出現在搜尋結果頁面(新增表符點擊標籤時會跳至搜尋表符頁面)
         doc['button_bar_search_emoji'].click()
     #使用上方標籤搜尋結果區塊的標籤搜尋時
     elif ev.currentTarget.className=="search_result_tag_btn":
         search_tag_str=ev.currentTarget.select(".search_result_tag_btn_text")[0].text
+        current_emoji_page = 1  # 重置到第一頁
         request_type="search emoji by click tag in search tag result"
 
     #定義動作:等待搜尋結果中，顯示提示訊息
@@ -138,15 +329,41 @@ def SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page):
 
     #定義動作:顯示表符搜尋結果的頁籤按鈕
     def OnComplete_insertEmojiPageBtn(res):
+        global current_emoji_page
+        
         #再次清空頁籤按鈕區塊(防止出現重複置入按鈕的請況)
         doc['emoji_page_btns'].clear()
 
         num_of_emoji_page_btn=int(res.text)
-        for num_of_emoji_page in range(1,num_of_emoji_page_btn+1):
-            doc['emoji_page_btns']<=BUTTON_emijiPage_elt(num_of_emoji_page,search_tag_str)
-        #預設第一個頁籤按鈕為按下的狀態(僅會在「搜尋表符」子頁面下發揮作用)
-        if doc['emoji_page_btns'].select("#emoji_page_btns > button:nth-child(1)"):
-            doc['emoji_page_btns'].select("#emoji_page_btns > button:nth-child(1)")[0].classList.add('emoji_page_btn_press')
+        
+        # 如果總頁數為0，不顯示分頁
+        if num_of_emoji_page_btn <= 0:
+            return
+            
+        # 添加上一頁按鈕
+        doc['emoji_page_btns'] <= BUTTON_prevPage_elt(current_emoji_page, search_tag_str)
+        
+        # 獲取智能分頁頁碼列表
+        pagination_items = get_smart_pagination_pages(current_emoji_page, num_of_emoji_page_btn)
+        
+        # 創建分頁按鈕
+        for item in pagination_items:
+            if item == "...":
+                # 添加省略號
+                doc['emoji_page_btns'] <= SPAN_ellipsis_elt()
+            else:
+                # 添加頁碼按鈕
+                page_btn = BUTTON_emijiPage_elt(item, search_tag_str)
+                page_btn.setAttribute('data-page', str(item))
+                doc['emoji_page_btns'] <= page_btn
+        
+        # 添加下一頁按鈕
+        doc['emoji_page_btns'] <= BUTTON_nextPage_elt(current_emoji_page, num_of_emoji_page_btn, search_tag_str)
+        
+        # 設置當前頁按鈕為按下的狀態
+        current_page_btns = doc['emoji_page_btns'].select(f'button.emoji_page_btn[data-page="{current_emoji_page}"]')
+        if current_page_btns:
+            current_page_btns[0].classList.add('emoji_page_btn_press')
     url=f'/PlurkEmojiHouse/numOfEmojiPageBtn?search_tag={search_tag_str}&num_of_emoji_per_page={num_of_emoji_per_page}'
     req = ajax.ajax()
     req.bind('complete',OnComplete_insertEmojiPageBtn)
