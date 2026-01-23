@@ -1,0 +1,7 @@
+250729 升級 PostgreSQL 資料庫版本 (v14.17→17.4) https://devcenter.heroku.com/articles/upgrading-heroku-postgres-databases#upgrading-with-pg-upgrade
+    # 查看指令
+    heroku
+    # 查看 APP 列表
+    heroku list
+    # 升級資料庫版本
+    heroku pg:upgrade -a papple23g-mysite2

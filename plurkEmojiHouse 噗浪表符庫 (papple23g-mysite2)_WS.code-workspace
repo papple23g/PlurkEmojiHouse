@@ -5,13 +5,30 @@
 		}
 	],
 	"settings": {
-		/*
-		python -m venv "C:\\Users\\$Env:UserName\\venvs\\plurkEmojiHouse_venv"
-		pip -V
-		."~\\venvs\\plurkEmojiHouse_venv\\Scripts\\python.exe" -m pip install -U pip
-		pip install -r requirements.txt
-		*/
+		/* [替換文字]
+		專案名稱: plurkEmojiHouse
+		Python 版本: 3.11.8
+		
+		# 取消註解 `python.defaultInterpreterPath` 後重新啟動 */
 		"python.defaultInterpreterPath": "~\\venvs\\plurkEmojiHouse_venv\\Scripts\\python.exe",
+		/*
+		# 確定環境變數正確
+		echo $Env:UV_PROJECT_ENVIRONMENT
+		
+		# 初始化 uv 專案
+		uv init -p 3.11.8 --name plurkEmojiHouse
+		
+		# 安裝: 同步模組
+		uv sync
+		
+		# ~選擇性啟動虛擬環境
+		."C:\\Users\\$Env:UserName\\venvs\\plurkEmojiHouse_venv\\Scripts\\activate.ps1"
+		# ~選擇性確定 python 路徑 (會顯示虛擬環境路徑)
+		uv pip install pip
+		*/
+		"terminal.integrated.env.windows": {
+			"UV_PROJECT_ENVIRONMENT": "C:\\Users\\${env:USERNAME}\\venvs\\plurkEmojiHouse_venv"
+		}
 	},
 	"launch": {
 		// 使用 IntelliSense 以得知可用的屬性。

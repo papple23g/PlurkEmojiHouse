@@ -346,6 +346,39 @@ def NumOfEmoji_and_NumOfTag(request):
     return HttpResponse(json.dumps([numOfEmoji, numOfTag]), content_type="application/json")
 
 
+# 功能函數，獲取噗文的互動表符 URL 列表
+
+
+def get_reaction_emoji_urls(plurk_id: int) -> list[str]:
+    url = "https://www.plurk.com/v2/reaction/plurk/summary"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8 GTB7.1 (.NET CLR 3.5.30729)",
+        "Content-Type": "application/json",
+    }
+    data = {"plurk_ids": [plurk_id]}
+    
+    try:
+        res = requests.post(
+            url,
+            headers=headers,
+            json=data,
+            timeout=10,
+            verify=certifi.where(),
+        )
+        res_dict = res.json()
+        
+        emoji_url_list = []
+        for summary in res_dict.get("summaries", []):
+            for reaction in summary.get("reactions", []):
+                emoji_url = reaction.get("emoticon", {}).get("url")
+                if emoji_url and emoji_url.startswith("https://emos.plurk.com/"):
+                    emoji_url_list.append(emoji_url)
+        return emoji_url_list
+    except Exception as e:
+        print(f"獲取互動表符失敗: {e!r}")
+        return []
+
+
 # 功能函數，用爬蟲獲取噗文網址的原始碼
 
 
@@ -378,6 +411,17 @@ def PlurkUrlHtml(request):
         # 排除沒有使用表符的回應
         if "https://emos.plurk.com/" in content_str:
             res_text += content_str
+    
+    # 獲取互動表符並加入到返回的 HTML 中
+    try:
+        plurk_id_int = int(plurk_id_str)
+        reaction_emoji_urls = get_reaction_emoji_urls(plurk_id_int)
+        for emoji_url in reaction_emoji_urls:
+            # 將互動表符 URL 轉換成 IMG 標籤格式，與現有表符格式一致
+            res_text += f'<img class="emoticon_my" src="{emoji_url}">'
+    except Exception as e:
+        print(f"處理互動表符時發生錯誤: {e!r}")
+    
     # print(res_text)
 
     return HttpResponse(res_text)
