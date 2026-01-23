@@ -800,7 +800,7 @@ AddStyle('''
 def DIV_subpage_updateDiary():
     div_elt=DIV(id="更新日誌",Class="subpage",style={"display":"none"})
     
-    div_elt<=DIV(IFRAME(src="https://hackmd.io/@YAK978r0TGugkhvYKSXT-g/HkwDgSKQH"),id="warp_iframe")
+    div_elt<=DIV(IFRAME(src="https://hackmd.io/@papple12g/B1N8hO2_h"),id="warp_iframe")
     #div_elt<=DIV(IFRAME(src="https://docs.google.com/document/d/e/2PACX-1vT0Z3y-e_t7ZIWRjcfOr-0f22uHqQLTDwrtNCeaPJNoI78KyviNLREvLV-eVId9MezNuRlqk2hCsHdI/pub?embedded=true"),id="warp_iframe")
     return div_elt
 AddStyle('''
@@ -815,7 +815,7 @@ AddStyle('''
 def DIV_otherProduction():
     div_elt=DIV(id="其他推廣",Class="subpage",style={"display":"none"})
 
-    div_elt<=DIV(IFRAME(src="https://hackmd.io/@papple23g/Byc0WHFXH"),id="warp_iframe")
+    div_elt<=DIV(IFRAME(src="https://hackmd.io/@papple12g/BJe_nuhOn"),id="warp_iframe")
 
     return div_elt
 AddStyle('''
@@ -831,7 +831,7 @@ AddStyle('''
 def DIV_about_author():
     div_elt=DIV(id="關於作者",Class="subpage",style={"display":"none"})
     
-    div_elt<=DIV(IFRAME(src="https://hackmd.io/@papple23g/SkRWltCVB"),id="warp_iframe")
+    div_elt<=DIV(IFRAME(src="https://hackmd.io/@papple12g/B12AuO2d3"),id="warp_iframe")
 
     return div_elt
 AddStyle('''
