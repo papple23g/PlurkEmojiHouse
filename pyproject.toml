@@ -11,7 +11,7 @@ dependencies = [
     "colorama==0.2.5",
     "dj-database-url==0.5.0",
     "dj-static==0.0.6",
-    "django==2.*",
+    "django==4.*",
     "django-taggit==0.23.0",
     "enum34==1.1.10",
     "gunicorn>=24.0.0",
