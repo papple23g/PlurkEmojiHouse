@@ -346,6 +346,45 @@ def NumOfEmoji_and_NumOfTag(request):
     return HttpResponse(json.dumps([numOfEmoji, numOfTag]), content_type="application/json")
 
 
+# 功能函數，從 HTML 中提取表符 URL
+
+
+def extract_emoji_urls_from_html(html_text: str) -> list[str]:
+    """
+    從 HTML 文本中提取所有表符 URL
+    
+    支援的格式：
+    - https://emos.plurk.com/...
+    - //emos.plurk.com/... (protocol-relative)
+    - https://s.plurk.com/...
+    - //s.plurk.com/...
+    
+    Returns:
+        list[str]: 正規化後的表符 URL 列表（去重且保持順序）
+    """
+    import re
+    
+    # 匹配所有可能的表符 URL 格式
+    # 包含 protocol-relative URL (//)、完整 URL (https://)
+    pattern = r'(?:https?:)?//(?:emos\.plurk\.com|s\.plurk\.com)/[a-zA-Z0-9_]+_w\d+_h\d+\.(png|gif|jpg|jpeg)'
+    
+    matches = re.findall(pattern, html_text)
+    # findall 會返回 group，需要重新搜尋完整 URL
+    all_matches = re.finditer(pattern, html_text)
+    emoji_urls_raw = [match.group(0) for match in all_matches]
+    
+    # 使用 Correcting_emojiUrl 正規化每個 URL
+    emoji_urls_normalized = []
+    for url in emoji_urls_raw:
+        corrected = Correcting_emojiUrl(url)
+        if corrected:
+            emoji_urls_normalized.append(corrected)
+    
+    # 去重但保持順序
+    unique_urls = list(dict.fromkeys(emoji_urls_normalized))
+    return unique_urls
+
+
 # 功能函數，從 reactions 數據中提取表符 URL
 
 
@@ -459,6 +498,24 @@ def PlurkUrlHtml(request):
             res_text += f'<img class="emoticon_my" src="{emoji_url}">'
     except Exception as e:
         print(f"處理互動表符時發生錯誤: {e!r}")
+    
+    # 從 HTML 中提取所有表符 URL（包含投票選項等處的表符）
+    try:
+        html_emoji_urls = extract_emoji_urls_from_html(res_text)
+        # 收集已經加入的表符 URL（避免重複加入）
+        existing_urls = set()
+        import re
+        existing_pattern = r'<img[^>]+src="(https://(?:emos|s)\.plurk\.com/[^"]+)"'
+        for match in re.finditer(existing_pattern, res_text):
+            existing_urls.add(match.group(1))
+        
+        # 補上尚未加入的表符
+        for emoji_url in html_emoji_urls:
+            if emoji_url not in existing_urls:
+                res_text += f'<img class="emoticon_my" src="{emoji_url}">'
+                existing_urls.add(emoji_url)
+    except Exception as e:
+        print(f"從 HTML 提取表符時發生錯誤: {e!r}")
     
     # print(res_text)
 
