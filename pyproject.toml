@@ -28,7 +28,7 @@ dependencies = [
     "six==1.5.2",
     "static3==0.6.1",
     "urllib3>=2.6.3",
-    "virtualenv==1.11.6",
+    "virtualenv==20.36.1",
 ]
 
 [project.optional-dependencies]
