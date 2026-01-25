@@ -346,6 +346,43 @@ def NumOfEmoji_and_NumOfTag(request):
     return HttpResponse(json.dumps([numOfEmoji, numOfTag]), content_type="application/json")
 
 
+# 功能函數，從 reactions 數據中提取表符 URL
+
+
+def extract_emoji_urls_from_reactions(reactions_data, data_format='list') -> list[str]:
+    """
+    從 reactions 數據中提取表符 URL
+    
+    Args:
+        reactions_data: reactions 數據（列表或字典）
+        data_format: 'list' 或 'summary' 格式
+            - 'list': reaction_summaries 格式 [{"reactions": [...]}]
+            - 'summary': plurk summary 格式 {"summaries": [{"reactions": [...]}]}
+    
+    Returns:
+        list[str]: 表符 URL 列表
+    """
+    try:
+        # 根據格式統一獲取 items 列表
+        if data_format == 'summary':
+            items = reactions_data.get("summaries", []) if isinstance(reactions_data, dict) else []
+        else:
+            items = reactions_data if isinstance(reactions_data, list) else []
+        
+        # 提取符合條件的表符 URL
+        return [
+            url
+            for item in items
+            if isinstance(item, dict)
+            for reaction in item.get('reactions', [])
+            if (url := reaction.get('emoticon', {}).get('url'))
+            and url.startswith("https://emos.plurk.com/")
+        ]
+    except Exception as e:
+        print(f"提取互動表符時發生錯誤: {e!r}")
+        return []
+
+
 # 功能函數，獲取噗文的互動表符 URL 列表
 
 
@@ -367,13 +404,8 @@ def get_reaction_emoji_urls(plurk_id: int) -> list[str]:
         )
         res_dict = res.json()
         
-        emoji_url_list = []
-        for summary in res_dict.get("summaries", []):
-            for reaction in summary.get("reactions", []):
-                emoji_url = reaction.get("emoticon", {}).get("url")
-                if emoji_url and emoji_url.startswith("https://emos.plurk.com/"):
-                    emoji_url_list.append(emoji_url)
-        return emoji_url_list
+        # 使用通用函數提取表符 URL
+        return extract_emoji_urls_from_reactions(res_dict, data_format='summary')
     except Exception as e:
         print(f"獲取互動表符失敗: {e!r}")
         return []
@@ -395,24 +427,30 @@ def PlurkUrlHtml(request):
     plurk_id_str = res_text[res_text_plurkIdSandStr_i +
                             len(plurk_id_sandStr): res_text.index(",", res_text_plurkIdSandStr_i+1)]
 
-    # 根據該噗文的ID進行POST請求，獲取回應噗文的字典資料
-    post_data_dict = {
-        'plurk_id': plurk_id_str,
-        'count': '1000',
-    }
-    url = r'https://www.plurk.com/Responses/get'
-    res = requests.post(url, data=post_data_dict)
+    # 根據該噗文的ID進行請求，獲取回應噗文的字典資料（包含 reaction_summaries）
+    url = f'https://www.plurk.com/v2/plurk/{plurk_id_str}/responses/seen'
+    res = requests.get(url, headers=headers, timeout=10, verify=certifi.where())
     res_dict = json.loads(res.text)
 
     # 將回應噗文的HTML原始碼內容和噗首原始碼自串接在一起送出
-    responses_dict_list = res_dict['responses']
+    responses_dict_list = res_dict.get('responses', [])
     for responses_dict in responses_dict_list:
         content_str = responses_dict['content']
         # 排除沒有使用表符的回應
         if "https://emos.plurk.com/" in content_str:
             res_text += content_str
     
-    # 獲取互動表符並加入到返回的 HTML 中
+    # 獲取留言的互動表符並加入到返回的 HTML 中
+    try:
+        reaction_summaries = res_dict.get('reaction_summaries', [])
+        # 使用通用函數提取表符 URL
+        response_reaction_urls = extract_emoji_urls_from_reactions(reaction_summaries, data_format='list')
+        for emoji_url in response_reaction_urls:
+            res_text += f'<img class="emoticon_my" src="{emoji_url}">'
+    except Exception as e:
+        print(f"處理留言互動表符時發生錯誤: {e!r}")
+    
+    # 獲取噗文的互動表符並加入到返回的 HTML 中
     try:
         plurk_id_int = int(plurk_id_str)
         reaction_emoji_urls = get_reaction_emoji_urls(plurk_id_int)

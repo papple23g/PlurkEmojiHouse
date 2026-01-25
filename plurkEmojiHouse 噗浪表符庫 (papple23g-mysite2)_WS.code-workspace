@@ -20,6 +20,9 @@
 		
 		# 安裝: 同步模組
 		uv sync
+
+		# 測試: 單元測試
+		uv run pytest -s -vv
 		
 		# ~選擇性啟動虛擬環境
 		."C:\\Users\\$Env:UserName\\venvs\\plurkEmojiHouse_venv\\Scripts\\activate.ps1"
