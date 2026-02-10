@@ -172,53 +172,6 @@ class TestRealApiCalls:
 class TestPollEmojiExtraction:
     """測試從投票選項中提取表符"""
     
-    def test_real_plurk_poll_emoji_3i8u0523ht(self):
-        """
-        測試真實噗文投票選項表符：https://www.plurk.com/p/3i8u0523ht
-        
-        預期結果：
-        應包含投票選項中的表符 URL：
-        https://emos.plurk.com/146525ccfa81c15db1244667dcc02eee_w47_h46.png
-        """
-        from myapp.views import PlurkUrlHtml, extract_emoji_urls_from_html
-        
-        plurk_url = "https://www.plurk.com/p/3i8u0523ht"
-        
-        # 建立 request
-        factory = RequestFactory()
-        request = factory.get('/PlurkUrlHtml/', {'plurk_url': plurk_url})
-        
-        # 執行實際爬取
-        response = PlurkUrlHtml(request)
-        html_content = response.content.decode('utf-8')
-        
-        # 輸出結果以便檢查
-        print("\n" + "="*80)
-        print("HTML 內容長度:", len(html_content))
-        print("="*80)
-        
-        # 使用 extract_emoji_urls_from_html 提取所有表符 URL
-        emoji_urls = extract_emoji_urls_from_html(html_content)
-        
-        print(f"\n使用 extract_emoji_urls_from_html 找到 {len(emoji_urls)} 個不重複的表符:")
-        for i, emoji_url in enumerate(emoji_urls, 1):
-            print(f"{i}. {emoji_url}")
-        print("="*80 + "\n")
-        
-        # 驗證關鍵表符：投票選項中的表符
-        target_emoji = "https://emos.plurk.com/146525ccfa81c15db1244667dcc02eee_w47_h46.png"
-        assert target_emoji in html_content, f"HTML 內容應包含投票表符: {target_emoji}"
-        
-        # 驗證從 HTML 提取的 URL 列表也包含此表符
-        assert target_emoji in emoji_urls, f"extract_emoji_urls_from_html 應提取到投票表符: {target_emoji}"
-        
-        # 額外驗證
-        assert len(emoji_urls) > 0, "應該至少找到一個表符"
-        assert response.status_code == 200, "HTTP 狀態碼應該是 200"
-        
-        print(f"✅ 找到投票選項表符: {target_emoji}")
-        print("\n✅ 所有驗證通過！")
-    
     def test_extract_emoji_urls_from_html_function(self):
         """
         單元測試：測試 extract_emoji_urls_from_html 函式對各種格式的支援

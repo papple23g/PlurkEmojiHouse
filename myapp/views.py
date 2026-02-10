@@ -422,6 +422,85 @@ def extract_emoji_urls_from_reactions(reactions_data, data_format='list') -> lis
         return []
 
 
+def chunked(iterable: list, size: int):
+    for idx in range(0, len(iterable), size):
+        yield iterable[idx: idx + size]
+
+
+def fetch_legacy_responses(plurk_id: int, start_response_id: int, headers: dict, max_iterations: int = 32) -> tuple[list, list[int]]:
+    legacy_url = "https://www.plurk.com/Responses/get"
+    if start_response_id is None:
+        return [], []
+
+    collected = []
+    response_ids = []
+    known_ids = set()
+    from_id = start_response_id
+    previous_last_id = None
+
+    for _ in range(max_iterations):
+        payload = {"plurk_id": plurk_id, "from_response_id": from_id}
+        try:
+            res = requests.post(
+                legacy_url,
+                headers=headers,
+                json=payload,
+                timeout=10,
+                verify=certifi.where(),
+            )
+            batch = res.json().get("responses", [])
+        except Exception as e:
+            print(f"獲取 legacy 回應失敗: {e!r}")
+            break
+
+        if not batch:
+            break
+
+        new_items = []
+        for item in batch:
+            rid = item.get("id")
+            if not rid or rid in known_ids:
+                continue
+            known_ids.add(rid)
+            new_items.append(item)
+            response_ids.append(rid)
+
+        if not new_items:
+            break
+
+        collected.extend(new_items)
+        last_id = batch[-1].get("id")
+        if not last_id or last_id == previous_last_id:
+            break
+
+        previous_last_id = last_id
+        from_id = last_id + 1
+
+    return collected, response_ids
+
+
+def fetch_response_reaction_urls(plurk_id: int, response_ids: list[int], headers: dict, chunk_size: int = 100) -> list[str]:
+    if not response_ids:
+        return []
+
+    url = f"https://www.plurk.com/v2/reaction/plurk/{plurk_id}/response/summary"
+    collected_urls: list[str] = []
+    for chunk in chunked(response_ids, chunk_size):
+        try:
+            res = requests.post(
+                url,
+                headers=headers,
+                json={"response_ids": chunk},
+                timeout=10,
+                verify=certifi.where(),
+            )
+            res_dict = res.json()
+            collected_urls.extend(extract_emoji_urls_from_reactions(res_dict, data_format="summary"))
+        except Exception as e:
+            print(f"獲取回應互動表符失敗: {e!r}")
+    return collected_urls
+
+
 # 功能函數，獲取噗文的互動表符 URL 列表
 
 
@@ -466,28 +545,47 @@ def PlurkUrlHtml(request):
     plurk_id_str = res_text[res_text_plurkIdSandStr_i +
                             len(plurk_id_sandStr): res_text.index(",", res_text_plurkIdSandStr_i+1)]
 
-    # 根據該噗文的ID進行請求，獲取回應噗文的字典資料（包含 reaction_summaries）
-    url = f'https://www.plurk.com/v2/plurk/{plurk_id_str}/responses/seen'
-    res = requests.get(url, headers=headers, timeout=10, verify=certifi.where())
-    res_dict = json.loads(res.text)
+    # 根據該噗文的ID進行請求，獲取所有回應噗文的數據（優先採用 legacy API）
+    seen_url = f'https://www.plurk.com/v2/plurk/{plurk_id_str}/responses/seen'
+    plurk_id_int = int(plurk_id_str)
+    seen_responses = []
+    seen_reaction_summaries = []
+    start_response_id = None
 
-    # 將回應噗文的HTML原始碼內容和噗首原始碼自串接在一起送出
-    responses_dict_list = res_dict.get('responses', [])
-    for responses_dict in responses_dict_list:
-        content_str = responses_dict['content']
-        # 排除沒有使用表符的回應
+    try:
+        seen_res = requests.get(seen_url, headers=headers, timeout=10, verify=certifi.where())
+        seen_data = seen_res.json()
+        seen_responses = seen_data.get('responses', [])
+        seen_reaction_summaries = seen_data.get('reaction_summaries', [])
+        if seen_responses:
+            start_response_id = seen_responses[0].get('id')
+    except Exception as e:
+        print(f"獲取回應概覽失敗: {e!r}")
+
+    legacy_responses, legacy_response_ids = fetch_legacy_responses(
+        plurk_id_int,
+        start_response_id,
+        headers,
+    )
+
+    if not legacy_responses and seen_responses:
+        legacy_responses = seen_responses
+        legacy_response_ids = [resp.get('id') for resp in seen_responses if resp.get('id')]
+
+    for responses_dict in legacy_responses:
+        content_str = responses_dict.get('content', '')
         if "https://emos.plurk.com/" in content_str:
             res_text += content_str
-    
-    # 獲取留言的互動表符並加入到返回的 HTML 中
-    try:
-        reaction_summaries = res_dict.get('reaction_summaries', [])
-        # 使用通用函數提取表符 URL
-        response_reaction_urls = extract_emoji_urls_from_reactions(reaction_summaries, data_format='list')
-        for emoji_url in response_reaction_urls:
-            res_text += f'<img class="emoticon_my" src="{emoji_url}">'
-    except Exception as e:
-        print(f"處理留言互動表符時發生錯誤: {e!r}")
+
+    response_reaction_urls = []
+    if legacy_response_ids:
+        response_reaction_urls = fetch_response_reaction_urls(plurk_id_int, legacy_response_ids, headers)
+
+    if not response_reaction_urls and seen_reaction_summaries:
+        response_reaction_urls = extract_emoji_urls_from_reactions(seen_reaction_summaries, data_format='list')
+
+    for emoji_url in response_reaction_urls:
+        res_text += f'<img class="emoticon_my" src="{emoji_url}">'
     
     # 獲取噗文的互動表符並加入到返回的 HTML 中
     try:

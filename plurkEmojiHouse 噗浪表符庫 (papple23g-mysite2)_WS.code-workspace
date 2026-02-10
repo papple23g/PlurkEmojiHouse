@@ -23,6 +23,7 @@
 
 		# 測試: 單元測試
 		uv run pytest -s -vv
+		uv run pytest
 		
 		# ~選擇性啟動虛擬環境
 		."C:\\Users\\$Env:UserName\\venvs\\plurkEmojiHouse_venv\\Scripts\\activate.ps1"
@@ -38,7 +39,7 @@
 		// 暫留以檢視現有屬性的描述。
 		// 如需詳細資訊，請瀏覽: https://go.microsoft.com/fwlink/?linkid=830387
 		/*
-			python manage.py runserver
+			uv run manage.py runserver
 		*/
 		"version": "0.2.0",
 		"configurations": [
