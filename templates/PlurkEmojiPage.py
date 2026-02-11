@@ -402,7 +402,7 @@ def DIV_subpage_searchEmoji():
     #置入表符結果TABLE
     div_elt<=div_emoji_result_table+BR()
     #置入表符結果頁籤按鈕區塊
-    div_elt<=DIV(id="emoji_page_btns",style={"margin-left":"20px"})
+    div_elt<=DIV(id="emoji_page_btns")
 
 
 
