@@ -21,8 +21,6 @@ from taggit.models import Tag
 
 from myapp.models import CombindEmoji, Emoji, HashOfImage_inputUrl
 
-TAGS = Tag.objects.all()
-
 # 定義動作:驗證和更正表符網址(v1.0)
 
 
@@ -52,15 +50,22 @@ def EmojiDictList(Emoji_list, user_uid=None):
     if user_uid:
         for emoji in Emoji_list:
             Emoji_dict = model_to_dict(emoji)
-            emoji_tags_names_filtered_list = [tag_name.replace("__collectorUsers__"+user_uid, "__be_collected__") for tag_name in emoji.tags.names(
-            ) if (tag_name == "__collectorUsers__"+user_uid or (not tag_name.startswith("__collectorUsers__")))]
+            tag_name_list = [tag.name for tag in emoji.tags.all()]
+            emoji_tags_names_filtered_list = [
+                tag_name.replace("__collectorUsers__" + user_uid, "__be_collected__")
+                for tag_name in tag_name_list
+                if (tag_name == "__collectorUsers__" + user_uid or (not tag_name.startswith("__collectorUsers__")))
+            ]
             Emoji_dict["tags"] = ','.join(emoji_tags_names_filtered_list)
             Emoji_dict_list.append(Emoji_dict)
     else:
         for emoji in Emoji_list:
             Emoji_dict = model_to_dict(emoji)
-            emoji_tags_names_filtered_list = [tag_name for tag_name in emoji.tags.names(
-            ) if (not tag_name.startswith("__collectorUsers__"))]
+            tag_name_list = [tag.name for tag in emoji.tags.all()]
+            emoji_tags_names_filtered_list = [
+                tag_name for tag_name in tag_name_list
+                if (not tag_name.startswith("__collectorUsers__"))
+            ]
             Emoji_dict["tags"] = ','.join(emoji_tags_names_filtered_list)
             Emoji_dict_list.append(Emoji_dict)
     return Emoji_dict_list
@@ -124,8 +129,8 @@ def search_by_tag(request):
 
         # 空字串的搜尋預設為顯示全部表符
         if search_tag == "":
-            Emoji_list = Emoji_objects.all().order_by(
-                "-id")[i_raw_top:i_raw_bottom]
+            Emoji_list = Emoji_objects.all().prefetch_related(
+                'tags').order_by("-id")[i_raw_top:i_raw_bottom]
         # 一般搜尋表符的情況
         else:
             # 區分逗號","分出多個標籤
@@ -138,7 +143,7 @@ def search_by_tag(request):
                 Emoji_objects.filter(tags__name__in=search_tag_str_set)
                 .annotate(num_tags=Count('tags'))
                 .filter(num_tags=len(search_tag_str_set))
-            ).order_by("-id")[i_raw_top:i_raw_bottom]
+            ).prefetch_related('tags').order_by("-id")[i_raw_top:i_raw_bottom]
         # 若有找到一個以上的結果，返回表符字典串列
         if Emoji_list:
             Emoji_dict_list = EmojiDictList(Emoji_list, user_uid)
@@ -208,7 +213,7 @@ def search_by_url(request):
     search_url = request.GET.get('search_url', "")
     user_uid = request.GET.get('user_uid', None)
     if ("https://emos.plurk.com/" in search_url) or ("https://s.plurk.com/" in search_url):
-        Emoji_list = Emoji.objects.filter(url=search_url)
+        Emoji_list = Emoji.objects.filter(url=search_url).prefetch_related('tags')
         # 若表符已存在，則僅將該資料回傳表符字典
         if Emoji_list:
             Emoji_dict_list = EmojiDictList(Emoji_list, user_uid=user_uid)
@@ -221,7 +226,7 @@ def search_by_url(request):
                 imagehash_str = str(imagehash)
                 Emoji.objects.create(
                     url=search_url, imagehash_str=imagehash_str)
-                Emoji_list = Emoji.objects.filter(url=search_url)
+                Emoji_list = Emoji.objects.filter(url=search_url).prefetch_related('tags')
                 Emoji_dict_list = EmojiDictList(Emoji_list, user_uid=user_uid)
                 return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
             except Exception as e:
@@ -242,7 +247,7 @@ def search_by_url_list(request):
         search_url = Correcting_emojiUrl(search_url)
         if search_url:
             search_url = search_url.strip()  # 去除網址前後空白
-            Emoji_obj_list = Emoji.objects.filter(url=search_url)
+            Emoji_obj_list = Emoji.objects.filter(url=search_url).prefetch_related('tags')
             # 若表符已存在，則僅將該資料回傳表符字典
             if Emoji_obj_list:
                 Emoji_dict = EmojiDictList(Emoji_obj_list)[0]
@@ -256,7 +261,7 @@ def search_by_url_list(request):
                     imagehash_str = str(imagehash)
                     Emoji.objects.create(
                         url=search_url, imagehash_str=imagehash_str)
-                    Emoji_obj_list = Emoji.objects.filter(url=search_url)
+                    Emoji_obj_list = Emoji.objects.filter(url=search_url).prefetch_related('tags')
                     Emoji_dict = EmojiDictList(Emoji_obj_list)[0]
                     Emoji_dict_list.append(Emoji_dict)
                 except:
@@ -315,25 +320,25 @@ def delete_tag(request):
 
 
 def search_tags(request):
-    # 分析請求，獲取要搜尋的關鍵字列表
     search_tag_list_str = request.GET.get('search_tag', "")
-    # 過濾想要搜尋的關鍵字列表:去除空白和含有使用者收藏標籤的開頭關鍵字
     search_tag_list = [tag.strip() for tag in search_tag_list_str.split(
         ",") if (tag != "" and ("__collectorUsers__" not in tag))]
 
+    seen_tag_name_set = set()
     tags_list = []
     num_of_tagged_list = []
     for search_tag in search_tag_list:
-        # 將有包含關鍵字的標籤放入tags_list
-        tags_list_QuerySet = TAGS.filter(name__icontains=search_tag)
-        # 過濾標籤搜尋結果:去除含有使用者收藏標籤的開頭關鍵字以及去除組合表符網址標籤
-        tags_list_QuerySet = [tag for tag in tags_list_QuerySet if (
-            "__collectorUsers__" not in tag.name) and ("https://emos.plurk.com/" not in tag.name)]
-        for tag in tags_list_QuerySet:
-            if tag not in tags_list:  # 不納入重複的標籤
+        annotated_tags_queryset = (
+            Tag.objects.filter(name__icontains=search_tag)
+            .exclude(name__icontains="__collectorUsers__")
+            .exclude(name__icontains="https://emos.plurk.com/")
+            .annotate(tagged_count=Count('taggit_taggeditem_items'))
+        )
+        for tag in annotated_tags_queryset:
+            if tag.name not in seen_tag_name_set:
+                seen_tag_name_set.add(tag.name)
                 tags_list.append(tag.name)
-                # 將標籤對應的【被標籤數】append到tags_list
-                num_of_tagged_list.append(tag.taggit_taggeditem_items.count())
+                num_of_tagged_list.append(tag.tagged_count)
     tags_list_and_num_of_tagged_list = [tags_list, num_of_tagged_list]
     return HttpResponse(json.dumps(tags_list_and_num_of_tagged_list), content_type="application/json")
 

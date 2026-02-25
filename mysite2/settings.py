@@ -143,7 +143,7 @@ STATIC_URL = '/static/'
 #setting for enviroment of Django online
 if 'DATABASE_URL' in os.environ:
     import dj_database_url
-    DATABASES = {'default': dj_database_url.config()}
+    DATABASES = {'default': dj_database_url.config(conn_max_age=600)}
     # Static asset configuration.
     STATIC_ROOT= os.path.join(BASE_DIR,'static')
     # Honor the 'X-Forwarded-Proto' header for request.is_secure().

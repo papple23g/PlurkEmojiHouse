@@ -1,1 +1,1 @@
-web: gunicorn mysite2.wsgi
+web: gunicorn mysite2.wsgi --workers 2 --threads 4 --worker-class gthread --timeout 25 --max-requests 1000 --max-requests-jitter 50
