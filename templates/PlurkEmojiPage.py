@@ -1,5 +1,5 @@
 #全域函數:版本號
-VERSION="2.7.1"
+VERSION="2.7.2"
 
 #更改網頁標題
 doc.select("head title")[0].text+=f" {VERSION}"
