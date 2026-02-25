@@ -2,23 +2,122 @@
 負責處理搜尋請求相關的函式
 """
 
-#定義頁籤按鈕，在生成時吸收(附加屬性)搜尋關鍵字
-def BUTTON_emijiPage_elt(num_of_emoji_page,search_tag_str):
-    #定義頁籤按鈕被按下時，套用被按下的樣式，並解除其它為未被按下的頁籤樣式
-    def BUTTONEmijiPageEltPressed(ev):
-        btn_elt_list=doc['emoji_page_btns'].select('button')
-        for btn_elt in btn_elt_list:
-            btn_elt.classList.remove("emoji_page_btn_press")
-        ev.currentTarget.classList.add("emoji_page_btn_press")
+_pg = {"total": 0, "tag": "", "per_page": 20}
 
-    btn_elt=BUTTON(num_of_emoji_page,Class="emoji_page_btn")
-    btn_elt.search_tag=search_tag_str
-    btn_elt.bind("click",SendRequest_searchEmoji)
-    btn_elt.bind("click",BUTTONEmijiPageEltPressed)
-    return btn_elt
+def _build_pagination(current_page):
+    total = _pg["total"]
+    tag = _pg["tag"]
+    container = doc['emoji_page_btns']
+    container.clear()
+    if total <= 1:
+        return
+
+    nav = DIV(Class="pagination")
+
+    def go_page(ev):
+        p = ev.currentTarget.page_number
+        SendRequest_searchEmoji(ev)
+        _build_pagination(p)
+
+    def mk(label, page_num, active=False, disabled=False, is_nav=False):
+        cls = "pg-btn"
+        if active:
+            cls += " pg-active"
+        if disabled:
+            cls += " pg-disabled"
+        if is_nav:
+            cls += " pg-nav"
+        btn = BUTTON(str(label), Class=cls)
+        btn.page_number = page_num
+        btn.search_tag = tag
+        if not disabled and not active:
+            btn.classList.add("emoji_page_btn")
+            btn.bind("click", go_page)
+        return btn
+
+    nav <= mk("«", 1, disabled=(current_page <= 1), is_nav=True)
+    nav <= mk("‹", max(1, current_page - 1), disabled=(current_page <= 1), is_nav=True)
+
+    pages = sorted(set([1, total] + list(range(max(1, current_page - 2), min(total, current_page + 2) + 1))))
+    prev = 0
+    for p in pages:
+        if p - prev > 1:
+            nav <= SPAN("…", Class="pg-ellipsis")
+        nav <= mk(p, p, active=(p == current_page))
+        prev = p
+
+    nav <= mk("›", min(total, current_page + 1), disabled=(current_page >= total), is_nav=True)
+    nav <= mk("»", total, disabled=(current_page >= total), is_nav=True)
+
+    container <= nav
+
 AddStyle('''
-    .emoji_page_btn_press{
-        background-color:#aaa;
+    .pagination {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+        padding: 12px 0;
+    }
+    .pg-btn {
+        min-width: 36px;
+        height: 36px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fff;
+        color: #333;
+        font-size: 14px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 10px;
+        transition: all 0.2s ease;
+        outline: none;
+        user-select: none;
+        line-height: 1;
+    }
+    .pg-btn:hover:not(.pg-active):not(.pg-disabled) {
+        background: #f0f0f0;
+        border-color: #bbb;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    .pg-active {
+        background: #4CAF50;
+        color: #fff;
+        border-color: #4CAF50;
+        font-weight: 700;
+        cursor: default;
+        box-shadow: 0 2px 8px rgba(76,175,80,0.3);
+    }
+    .pg-disabled {
+        color: #ccc;
+        border-color: #eee;
+        cursor: default;
+        background: #fafafa;
+    }
+    .pg-nav {
+        font-size: 16px;
+    }
+    .pg-ellipsis {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 28px;
+        height: 36px;
+        color: #999;
+        font-size: 16px;
+        user-select: none;
+    }
+    @media (max-width: 480px) {
+        .pg-btn {
+            min-width: 32px;
+            height: 32px;
+            font-size: 12px;
+            padding: 0 6px;
+        }
+        .pagination { gap: 2px; }
     }
 ''')
 
@@ -50,7 +149,7 @@ def SendRequest_searchEmoji(ev):
     elif "emoji_page_btn" in ev.currentTarget.classList:
         btn_elt=ev.currentTarget
         search_tag_str=btn_elt.search_tag
-        page=int(btn_elt.text)-1
+        page=btn_elt.page_number-1
         request_type="search emoji by click page button"
     #使用標籤搜尋時，從標籤物件上提取關鍵字
     elif ev.currentTarget.className=="tag_btn":
@@ -131,26 +230,20 @@ def SendRequest_searchEmoji(ev):
 
 #定義請求動作:顯示表符搜尋結果的頁籤按鈕
 def SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page):
-    #先顯示並清空頁籤按鈕區塊
     doc['emoji_page_btns'].classList.remove('hidden')
     doc['emoji_page_btns'].clear()
-    
 
-    #定義動作:顯示表符搜尋結果的頁籤按鈕
     def OnComplete_insertEmojiPageBtn(res):
-        #再次清空頁籤按鈕區塊(防止出現重複置入按鈕的請況)
         doc['emoji_page_btns'].clear()
-
         num_of_emoji_page_btn=int(res.text)
-        for num_of_emoji_page in range(1,num_of_emoji_page_btn+1):
-            doc['emoji_page_btns']<=BUTTON_emijiPage_elt(num_of_emoji_page,search_tag_str)
-        #預設第一個頁籤按鈕為按下的狀態(僅會在「搜尋表符」子頁面下發揮作用)
-        if doc['emoji_page_btns'].select("#emoji_page_btns > button:nth-child(1)"):
-            doc['emoji_page_btns'].select("#emoji_page_btns > button:nth-child(1)")[0].classList.add('emoji_page_btn_press')
+        _pg["total"] = num_of_emoji_page_btn
+        _pg["tag"] = search_tag_str
+        _pg["per_page"] = num_of_emoji_per_page
+        _build_pagination(1)
+
     url=f'/PlurkEmojiHouse/numOfEmojiPageBtn?search_tag={search_tag_str}&num_of_emoji_per_page={num_of_emoji_per_page}'
     req = ajax.ajax()
     req.bind('complete',OnComplete_insertEmojiPageBtn)
-    
     req.open('GET',url,True)
     req.set_header('content-type','application/x-www-form-urlencoded')
     req.send()
