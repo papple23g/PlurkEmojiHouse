@@ -49,6 +49,8 @@ AddStyle('''
     .emoji_pic{
         box-shadow:2px 2px 2px gray;
         cursor: pointer;
+        max-width: 48px;
+        max-height: 48px;
     }
     .emoji_pic:hover{
         box-shadow:2px 2px 8px black;
