@@ -1,5 +1,5 @@
 #全域函數:版本號
-VERSION="2.7.2"
+VERSION="2.7.3"
 
 #更改網頁標題
 doc.select("head title")[0].text+=f" {VERSION}"
@@ -11,14 +11,17 @@ doc['loading_webpage_msg'].remove()
 def DIV_header():
     div_elt=DIV(id="div_header",Class="w3-row-padding w3-green")
     #設置網頁標頭H1元素
-    H1_title_elt=H1(
-        B(
-            f"噗浪表符庫 {VERSION}"
-            ,style={
-                "font-family":"微軟正黑體"
-            }
-        ),
-        style={"float":"left"},
+    H1_title_elt=H1(style={"float":"left"})
+    H1_title_elt<=B(
+        "噗浪表符庫 ",
+        style={"font-family": "微軟正黑體"},
+    )
+    H1_title_elt<=SPAN(
+        VERSION,
+        style={
+            "font-family": "微軟正黑體",
+            "font-size": "0.75em",
+        },
     )
     #設置使用者登入訊息DIV元素
     DIV_userLoginInfo_elt=DIV(
