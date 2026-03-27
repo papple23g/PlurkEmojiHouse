@@ -170,13 +170,12 @@ def SendRequest_searchEmoji(ev):
 
     #定義動作:顯示表符搜尋結果TABLE
     def OnComplete_searchEmoji(res):
-        #rint(res.text)
-        #清空表符結果區塊以便顯示新的結果
         doc['emoji_result_table'].clear()
-        #沒有找到表符的情況
+        if not res.text:
+            doc['emoji_result_table']<=P("搜尋失敗，請稍後再試")
+            return
         if res.text[0]==u'沒':
             doc['emoji_result_table']<=P(res.text)
-        #有找到表符的情況
         else:
             #根據當前的表符結果顯示設定來顯示表符欄位/網格
             if "on_pressed" in doc['div_fa_list'].classList:
@@ -188,7 +187,9 @@ def SendRequest_searchEmoji(ev):
                 doc['search_tag'].value=""
     
     def Timeout_searchEmoji(res):
-        pass
+        doc['emoji_result_table'].clear()
+        doc['emoji_result_table']<=P("搜尋逾時，請重新整理頁面後再試一次")
+        doc['emoji_page_btns'].clear()
 
     #若為表符網址，則設定url為搜尋或新增表符
     if "s.plurk.com" in search_tag_str:
@@ -216,7 +217,7 @@ def SendRequest_searchEmoji(ev):
     req.bind('loading',OnLoading_searchEmoji)
     req.open('GET',url,True)
     req.set_header('content-type','application/x-www-form-urlencoded')
-    req.set_timeout(8000,Timeout_searchEmoji)
+    req.set_timeout(30000,Timeout_searchEmoji)
     req.send()
 
     #若不是以頁籤進行搜尋，則進行生成頁籤按鈕請求處理
