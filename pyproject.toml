@@ -19,7 +19,7 @@ dependencies = [
     "imagehash==4.0",
     "path-py==8.1.2",
     "pathlib==1.0.1",
-    "pillow==9.5.0",
+    "pillow==10.3.0",
     "psycopg2-binary==2.9.9",
     "ptyprocess==0.5",
     "pyscss==1.4.0",
