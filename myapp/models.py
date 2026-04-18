@@ -38,6 +38,8 @@ import requests as req
 import certifi
 #定義函數:輸入圖片網址計算hash數值
 def HashOfImage_inputUrl(img_src):
-    response = req.get(img_src, verify=certifi.where())
+    response = req.get(
+        img_src, verify=certifi.where(), timeout=12,
+    )
     image = Image.open(BytesIO(response.content))
     return imagehash.average_hash(image)

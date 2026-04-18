@@ -1,1 +1,1 @@
-web: gunicorn mysite2.wsgi --workers 2 --threads 2
+web: gunicorn mysite2.wsgi -c gunicorn.conf.py

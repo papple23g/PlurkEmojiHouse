@@ -143,7 +143,8 @@ STATIC_URL = '/static/'
 #setting for enviroment of Django online
 if 'DATABASE_URL' in os.environ:
     import dj_database_url
-    DATABASES = {'default': dj_database_url.config(conn_max_age=600)}
+    # Heroku：長時間 conn_max_age 易拿到已被平台回收的連線，造成請求掛死 → H12
+    DATABASES = {'default': dj_database_url.config(conn_max_age=0)}
     # Static asset configuration.
     STATIC_ROOT= os.path.join(BASE_DIR,'static')
     # Honor the 'X-Forwarded-Proto' header for request.is_secure().

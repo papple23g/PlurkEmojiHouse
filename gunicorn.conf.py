@@ -2,7 +2,7 @@ import os
 
 worker_class = "gthread"
 
-workers = os.environ.get("WEB_CONCURRENCY", 2)
+workers = int(os.environ.get("WEB_CONCURRENCY", "2"))
 
 threads = 4
 
