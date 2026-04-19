@@ -5,7 +5,9 @@ import json
 from functools import reduce
 
 import certifi
+import imagehash
 import requests
+from django.core.cache import cache
 from django.forms.models import model_to_dict
 
 '''
@@ -20,6 +22,11 @@ from django.shortcuts import render
 from taggit.models import Tag
 
 from myapp.models import CombindEmoji, Emoji, HashOfImage_inputUrl
+
+# 列表 API 超過此 OFFSET 不查詢（避免 Postgres 深分頁拖垮小 dyno）
+MAX_EMOJI_LIST_OFFSET = 8000
+STATS_CACHE_TTL = 60
+EMOJI_TOTAL_CACHE_TTL = 45
 
 # 定義動作:驗證和更正表符網址(v1.0)
 
@@ -86,16 +93,23 @@ def search_by_tag(request):
         emoji_qlist = Emoji.objects.filter(id=emoji_id)
         # 若該emoji存在
         if emoji_qlist:
-            emoji = emoji_qlist[0]
-            imagehash = emoji.getImagehash()
+            base_emoji = emoji_qlist[0]
+            base_hash = base_emoji.getImagehash()
             threshold = 8
             similar_emoji_list = []
-            for emoji in Emoji.objects.all():
+            # 僅與已存 imagehash 的候選比對，並限制數量，避免 Emoji.objects.all() 全表 + 下載圖片
+            candidates = (
+                Emoji.objects.filter(imagehash_str__isnull=False)
+                .exclude(imagehash_str='')
+                .exclude(id=base_emoji.id)
+                .order_by('-id')[:1500]
+            )
+            for other in candidates:
                 try:
-                    diff_int = imagehash-emoji.getImagehash()
-                    if (diff_int < threshold):
-                        similar_emoji_list.append(emoji)
-                except:
+                    diff_int = base_hash - imagehash.hex_to_hash(other.imagehash_str)
+                    if diff_int < threshold:
+                        similar_emoji_list.append(other)
+                except Exception:
                     pass
             Emoji_dict_list = EmojiDictList(similar_emoji_list, user_uid)
             return HttpResponse(json.dumps(Emoji_dict_list), content_type="application/json")
@@ -110,6 +124,9 @@ def search_by_tag(request):
             request.GET.get('num_of_emoji_per_page', "20"))
         i_raw_top = i_page*num_of_emoji_per_page
         i_raw_bottom = i_raw_top+num_of_emoji_per_page
+
+        if i_raw_top >= MAX_EMOJI_LIST_OFFSET:
+            return HttpResponse(json.dumps([]), content_type="application/json")
 
         # 設置表符模組物件
         Emoji_objects = Emoji.objects
@@ -188,7 +205,13 @@ def numOfEmojiPageBtn(request):
 
     # 若表符列表為空字串，則計算全部表符需要幾頁
     if search_tag == "":
-        num_of_btn = (Emoji_objects.count()-1)/num_of_emoji_per_page + 1
+        cache_key = 'emoji_total_count_v1'
+        total = cache.get(cache_key)
+        if total is None:
+            total = Emoji_objects.count()
+            cache.set(cache_key, total, EMOJI_TOTAL_CACHE_TTL)
+        effective = min(total, MAX_EMOJI_LIST_OFFSET)
+        num_of_btn = int((effective - 1) / num_of_emoji_per_page + 1) if effective > 0 else 1
     # 若表符列表不為空字串，則計算搜尋結果全部表符需要幾頁
     else:
         # 區分逗號","分出多個標籤
@@ -203,7 +226,8 @@ def numOfEmojiPageBtn(request):
             .filter(num_tags=len(search_tag_str_set))
             .count()
         )
-        num_of_btn = (Emoji_list_count-1)/num_of_emoji_per_page + 1
+        capped = min(Emoji_list_count, MAX_EMOJI_LIST_OFFSET)
+        num_of_btn = int((capped - 1) / num_of_emoji_per_page + 1) if capped > 0 else 1
     return HttpResponse(int(num_of_btn))
 
 
@@ -346,9 +370,12 @@ def search_tags(request):
 
 
 def NumOfEmoji_and_NumOfTag(request):
-    numOfEmoji = Emoji.objects.count()
-    numOfTag = Tag.objects.count()
-    return HttpResponse(json.dumps([numOfEmoji, numOfTag]), content_type="application/json")
+    cache_key = 'stats:num_emoji_num_tag_v1'
+    data = cache.get(cache_key)
+    if data is None:
+        data = [Emoji.objects.count(), Tag.objects.count()]
+        cache.set(cache_key, data, STATS_CACHE_TTL)
+    return HttpResponse(json.dumps(data), content_type="application/json")
 
 
 # 功能函數，從 HTML 中提取表符 URL
@@ -432,7 +459,7 @@ def chunked(iterable: list, size: int):
         yield iterable[idx: idx + size]
 
 
-def fetch_legacy_responses(plurk_id: int, start_response_id: int, headers: dict, max_iterations: int = 32) -> tuple[list, list[int]]:
+def fetch_legacy_responses(plurk_id: int, start_response_id: int, headers: dict, max_iterations: int = 10) -> tuple[list, list[int]]:
     legacy_url = "https://www.plurk.com/Responses/get"
     if start_response_id is None:
         return [], []
@@ -652,7 +679,12 @@ def DeleteCombindEmoji(request):
 
 def SearchCombindEmoji(request):
     emoji_url = request.GET.get('emoji_url', None)
-    combind_url_list = [combindEmoji.combind_url for combindEmoji in CombindEmoji.objects.filter(
-        emoji_url_set__name__in=[emoji_url])]
-    # print "emoji_url:",emoji_url,"\ncombind_url_list:",combind_url_list
+    if not emoji_url:
+        return HttpResponse(json.dumps([]), content_type="application/json")
+    # values_list + distinct 避免為每筆 ORM 建物件；上限避免單一請求回傳過大 JSON
+    combind_url_list = list(
+        CombindEmoji.objects.filter(emoji_url_set__name=emoji_url)
+        .values_list('combind_url', flat=True)
+        .distinct()[:500]
+    )
     return HttpResponse(json.dumps(combind_url_list), content_type="application/json")

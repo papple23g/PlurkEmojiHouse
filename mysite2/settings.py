@@ -134,6 +134,13 @@ USE_L10N = True
 
 USE_TZ = True
 
+# 單機記憶體快取（Heroku 每個 worker 行程各自一份，仍可減輕 COUNT 尖峰）
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'plurk_emoji_house',
+    }
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
