@@ -2,7 +2,7 @@
 負責處理搜尋請求相關的函式
 """
 
-_pg = {"total": 0, "tag": "", "per_page": 20}
+_pg = {"total": 0, "tag": "", "per_page": 20, "before_id_for_page": {}}
 
 def _build_pagination(current_page):
     total = _pg["total"]
@@ -30,6 +30,10 @@ def _build_pagination(current_page):
         btn = BUTTON(str(label), Class=cls)
         btn.page_number = page_num
         btn.search_tag = tag
+        if isinstance(page_num, int):
+            btn.before_id = _pg.get("before_id_for_page", {}).get(page_num)
+        else:
+            btn.before_id = None
         if not disabled and not active:
             btn.classList.add("emoji_page_btn")
             btn.bind("click", go_page)
@@ -177,6 +181,17 @@ def SendRequest_searchEmoji(ev):
         if res.text[0]==u'沒':
             doc['emoji_result_table']<=P(res.text)
         else:
+            try:
+                if res.text[0] == '[':
+                    items = json.loads(res.text)
+                    if isinstance(items, list) and items:
+                        pp = _pg.get("pending_page", 0)
+                        ids = [int(x['id']) for x in items if 'id' in x]
+                        if ids:
+                            _pg.setdefault("before_id_for_page", {})
+                            _pg["before_id_for_page"][pp + 2] = min(ids)
+            except Exception:
+                pass
             #根據當前的表符結果顯示設定來顯示表符欄位/網格
             if "on_pressed" in doc['div_fa_list'].classList:
                 doc['emoji_result_table']<=TABLE_emojiReslut(res)
@@ -185,6 +200,8 @@ def SendRequest_searchEmoji(ev):
             #若為網址新增表符動作，則清空搜尋欄文字
             if request_type=="search or add emoji by input url":
                 doc['search_tag'].value=""
+            if _pg.get("total", 0) > 1:
+                _build_pagination(_pg.get("pending_page", 0) + 1)
     
     def Timeout_searchEmoji(res):
         doc['emoji_result_table'].clear()
@@ -207,11 +224,21 @@ def SendRequest_searchEmoji(ev):
     if doc['checkbox_showCombindEmojis'].checked:
         search_tag_str+=",__showCombindEmojis__"
 
+    # 新搜尋時清空 keyset 游標；僅點頁籤時沿用已建立的 before_id
+    if request_type != "search emoji by click page button":
+        _pg["before_id_for_page"] = {}
+
+    _pg["pending_page"] = page
+
     #根據不同搜尋方式設定request
     if request_type=="search or add emoji by input url":
         url=f'/PlurkEmojiHouse/search_by_url?search_url={emoji_url}&user_uid={user_uid}'
     else:
         url=f'/PlurkEmojiHouse/search_by_tag?search_tag={search_tag_str}&page={page}&user_uid={user_uid}&num_of_emoji_per_page={num_of_emoji_per_page}'
+        if request_type == "search emoji by click page button":
+            bid = getattr(ev.currentTarget, "before_id", None)
+            if bid is not None:
+                url += f'&before_id={int(bid)}'
     req = ajax.ajax()
     req.bind('complete',OnComplete_searchEmoji)
     req.bind('loading',OnLoading_searchEmoji)

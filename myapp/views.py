@@ -23,8 +23,6 @@ from taggit.models import Tag
 
 from myapp.models import CombindEmoji, Emoji, HashOfImage_inputUrl
 
-# 列表 API 超過此 OFFSET 不查詢（避免 Postgres 深分頁拖垮小 dyno）
-MAX_EMOJI_LIST_OFFSET = 8000
 STATS_CACHE_TTL = 60
 EMOJI_TOTAL_CACHE_TTL = 45
 
@@ -97,12 +95,13 @@ def search_by_tag(request):
             base_hash = base_emoji.getImagehash()
             threshold = 8
             similar_emoji_list = []
-            # 僅與已存 imagehash 的候選比對，並限制數量，避免 Emoji.objects.all() 全表 + 下載圖片
+            # 僅與已存 imagehash 的候選比對（不用 getImagehash 下載）；iterator 降低記憶體
             candidates = (
                 Emoji.objects.filter(imagehash_str__isnull=False)
                 .exclude(imagehash_str='')
                 .exclude(id=base_emoji.id)
-                .order_by('-id')[:1500]
+                .order_by('-id')
+                .iterator(chunk_size=500)
             )
             for other in candidates:
                 try:
@@ -125,9 +124,6 @@ def search_by_tag(request):
         i_raw_top = i_page*num_of_emoji_per_page
         i_raw_bottom = i_raw_top+num_of_emoji_per_page
 
-        if i_raw_top >= MAX_EMOJI_LIST_OFFSET:
-            return HttpResponse(json.dumps([]), content_type="application/json")
-
         # 設置表符模組物件
         Emoji_objects = Emoji.objects
 
@@ -146,8 +142,7 @@ def search_by_tag(request):
 
         # 空字串的搜尋預設為顯示全部表符
         if search_tag == "":
-            Emoji_list = Emoji_objects.all().prefetch_related(
-                'tags').order_by("-id")[i_raw_top:i_raw_bottom]
+            base_qs = Emoji_objects.all().prefetch_related('tags').order_by("-id")
         # 一般搜尋表符的情況
         else:
             # 區分逗號","分出多個標籤
@@ -156,11 +151,21 @@ def search_by_tag(request):
                 for tag in search_tag.split(",") if tag != ""
             }
             # 進行集合篩選
-            Emoji_list = (
+            base_qs = (
                 Emoji_objects.filter(tags__name__in=search_tag_str_set)
                 .annotate(num_tags=Count('tags'))
                 .filter(num_tags=len(search_tag_str_set))
-            ).prefetch_related('tags').order_by("-id")[i_raw_top:i_raw_bottom]
+            ).prefetch_related('tags').order_by("-id")
+
+        before_id_raw = request.GET.get('before_id')
+        if before_id_raw:
+            try:
+                bid = int(before_id_raw)
+                Emoji_list = list(base_qs.filter(id__lt=bid)[:num_of_emoji_per_page])
+            except (ValueError, TypeError):
+                Emoji_list = list(base_qs[i_raw_top:i_raw_bottom])
+        else:
+            Emoji_list = list(base_qs[i_raw_top:i_raw_bottom])
         # 若有找到一個以上的結果，返回表符字典串列
         if Emoji_list:
             Emoji_dict_list = EmojiDictList(Emoji_list, user_uid)
@@ -210,8 +215,7 @@ def numOfEmojiPageBtn(request):
         if total is None:
             total = Emoji_objects.count()
             cache.set(cache_key, total, EMOJI_TOTAL_CACHE_TTL)
-        effective = min(total, MAX_EMOJI_LIST_OFFSET)
-        num_of_btn = int((effective - 1) / num_of_emoji_per_page + 1) if effective > 0 else 1
+        num_of_btn = int((total - 1) / num_of_emoji_per_page + 1) if total > 0 else 1
     # 若表符列表不為空字串，則計算搜尋結果全部表符需要幾頁
     else:
         # 區分逗號","分出多個標籤
@@ -226,8 +230,7 @@ def numOfEmojiPageBtn(request):
             .filter(num_tags=len(search_tag_str_set))
             .count()
         )
-        capped = min(Emoji_list_count, MAX_EMOJI_LIST_OFFSET)
-        num_of_btn = int((capped - 1) / num_of_emoji_per_page + 1) if capped > 0 else 1
+        num_of_btn = int((Emoji_list_count - 1) / num_of_emoji_per_page + 1) if Emoji_list_count > 0 else 1
     return HttpResponse(int(num_of_btn))
 
 
@@ -459,7 +462,7 @@ def chunked(iterable: list, size: int):
         yield iterable[idx: idx + size]
 
 
-def fetch_legacy_responses(plurk_id: int, start_response_id: int, headers: dict, max_iterations: int = 10) -> tuple[list, list[int]]:
+def fetch_legacy_responses(plurk_id: int, start_response_id: int, headers: dict, max_iterations: int = 32) -> tuple[list, list[int]]:
     legacy_url = "https://www.plurk.com/Responses/get"
     if start_response_id is None:
         return [], []
@@ -681,10 +684,9 @@ def SearchCombindEmoji(request):
     emoji_url = request.GET.get('emoji_url', None)
     if not emoji_url:
         return HttpResponse(json.dumps([]), content_type="application/json")
-    # values_list + distinct 避免為每筆 ORM 建物件；上限避免單一請求回傳過大 JSON
     combind_url_list = list(
         CombindEmoji.objects.filter(emoji_url_set__name=emoji_url)
         .values_list('combind_url', flat=True)
-        .distinct()[:500]
+        .distinct()
     )
     return HttpResponse(json.dumps(combind_url_list), content_type="application/json")
