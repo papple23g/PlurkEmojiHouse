@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
+from django.views.generic import TemplateView
 from myapp.views import *
 
 from django.conf import settings
@@ -22,6 +23,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^ads\.txt$', TemplateView.as_view(template_name='ads.txt', content_type='text/plain')),
+    url(r'^privacy/?$', TemplateView.as_view(template_name='privacy.html'), name='privacy'),
+    url(r'^PlurkEmojiHouse/views$', record_site_view, name='record_site_view'),
     url(r'^$',PlurkEmojiHouse),
     url(r'^PlurkEmojiHouse$',PlurkEmojiHouse),
     url(r'^PlurkEmojiHouse/$',PlurkEmojiHouse),

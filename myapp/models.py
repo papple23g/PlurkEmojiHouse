@@ -3,6 +3,20 @@ from __future__ import unicode_literals
 from django.db import models
 from taggit.managers import TaggableManager
 
+
+class SiteViews(models.Model):
+    name = models.CharField(max_length=64, primary_key=True)
+    total = models.BigIntegerField()
+    imported_total = models.BigIntegerField()
+    imported_at = models.DateTimeField()
+
+    class Meta:
+        verbose_name = "網站累積瀏覽數"
+        verbose_name_plural = "網站累積瀏覽數"
+
+    def __str__(self) -> str:
+        return f"{self.name}: {self.total:,}"
+
 #表符模組
 class Emoji(models.Model):
     url=models.CharField(max_length=100)

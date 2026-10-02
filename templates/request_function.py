@@ -837,34 +837,28 @@ def SendRequest_SearchCombindEmoji(emoji_url,combind_emoji_btn_elt):
 
 
 
-#定義Firebase請求:讀取瀏覽人數資料並且顯示出來
-def ShowAndUpdateWebSiteViews():
+# 每次頁面載入只送出一次；搜尋及翻頁不增加瀏覽次數。
+_site_view_sent = False
 
-    #定義動作:顯示瀏覽人數至本站Header
-    def ShowWebSiteViews(webSiteViews):
-        doc['span_website_views'].text=f'{webSiteViews:,}'
 
-    #定義Firebase請求:更新瀏覽人數資料
-    def UpdateWebSiteViews(data_dict,path):
-        database_ref=database.ref(path)
-        database_ref.update(data_dict)
-        log(data_dict)##
+def ShowAndUpdateWebSiteViews() -> None:
+    global _site_view_sent
+    if _site_view_sent:
+        return
+    _site_view_sent = True
 
-    path="PlurkEmojiHouse"
-    #定義完成讀取後的動作
-    def gotData(data):
-        data_dict=JSObject_to_PythonDict(data.toJSON())
-        webSiteViews=data_dict['WebSiteViews']
-        #增加瀏覽量並更新瀏覽人數資料
-        webSiteViews+=1
-        data_dict['WebSiteViews']=webSiteViews
-        UpdateWebSiteViews(data_dict,path)
-        #顯示瀏覽人數至本站Header
-        ShowWebSiteViews(webSiteViews)
-    #定義完成讀取後的動作
-    def errData(err):
-        log("ERROR!")
-        log(err)
+    def completed(response: object) -> None:
+        if response.status == 200:
+            doc['span_website_views'].text = f"{json.loads(response.text)['total']:,}"
+        else:
+            doc['span_website_views'].text = '暫時無法取得'
 
-    database_ref=database.ref(path)
-    database_ref.once("value",gotData,errData)
+    def timed_out(response: object) -> None:
+        doc['span_website_views'].text = '暫時無法取得'
+
+    request = ajax.ajax()
+    request.bind('complete', completed)
+    request.open('POST', '/PlurkEmojiHouse/views', True)
+    request.set_header('X-CSRFToken', doc.select('#site_view_csrf input')[0].value)
+    request.set_timeout(15, timed_out)
+    request.send()
