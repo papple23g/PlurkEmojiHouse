@@ -854,6 +854,7 @@ doc<=DIV_subpage_addEmoji()
 doc<=DIV_subpage_updateDiary()
 doc<=DIV_otherProduction()
 doc<=DIV_about_author()
+doc<=doc['site_footer']
 
 #進入前直接顯示全部表符
 doc['show_all_emoji_btn'].click()

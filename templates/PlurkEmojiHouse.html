@@ -3,7 +3,6 @@
 
 <body onload="brython(1)">
 <div id="site_view_csrf" hidden>{% csrf_token %}</div>
-<p style="text-align:right;margin:0 1rem"><a href="/privacy">隱私權說明</a></p>
 
 <div id="fb-root"></div>
 <script>
@@ -38,5 +37,9 @@
 
 
 <p id="loading_webpage_msg">正在載入中... (若10秒後無回應請嘗試重新整理)</p>
+
+<footer id="site_footer" style="clear:both;width:90%;max-width:1000px;margin:1.5rem 20px;text-align:center;font-size:13px;color:#666">
+    <a href="/privacy" style="color:inherit">隱私權說明</a>
+</footer>
 
 </body>
