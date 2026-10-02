@@ -37,11 +37,33 @@ Plurk 整合測試會呼叫外部 API，外部服務異常須與本次相容性�
 
 ## 正式切換及回復
 
+正式部署、維護模式、資料修改及正式功能測試，只能在使用者確認的凌晨日期與時段執行，時間以 `Asia/Taipei` 為準。
+「執行計畫」不代表取消部署時段限制；尚未確認具體時段時，只能完成本機準備與驗證。
+
 每次部署前確認精準提交與乾淨工作樹，使用 Heroku Git：
 
 ```powershell
 git push heroku HEAD:master
 ```
+
+### 管理後台靜態檔
+
+v151 的建置紀錄顯示 `DISABLE_COLLECTSTATIC` 仍然啟用，來源內的 `static/admin` 是舊版收集結果。
+本機 Django 5.2 管理登入頁引用的 7 個 CSS/JS 中有 5 個不在這個目錄，尚須補齊正式建置。
+`.slugignore` 排除這份舊目錄，交由 Heroku 的原生 `collectstatic` 從已鎖定的 Django 套件重新收集；沿用 `dj-static` 服務方式。
+參考 [Heroku 靜態檔建置說明](https://devcenter.heroku.com/articles/django-assets) 與 [slugignore 規則](https://devcenter.heroku.com/articles/slug-compiler#ignoring-files-with-slugignore)。
+
+**以下都是正式變更，只能在已確認的凌晨時段操作；目前尚未執行。**
+解除 `DISABLE_COLLECTSTATIC` 會建立 release，須納入當次版本紀錄。接著才部署已提交的 HEAD：
+
+```powershell
+heroku config:unset DISABLE_COLLECTSTATIC --app papple23g-mysite2
+$collectstaticDisabled = (heroku config:get DISABLE_COLLECTSTATIC --app papple23g-mysite2 | Out-String).Trim()
+if ($collectstaticDisabled) { throw '尚未啟用 collectstatic，禁止部署排除舊靜態檔的版本。' }
+git push heroku HEAD:master
+```
+
+確認建置確實執行 `collectstatic`，再以正式 WSGI 逐一驗證管理頁引用的靜態檔及公開頁面。
 
 第二階段先進入維護模式、確認背景與 one-off 作業未在寫入資料，等待現有請求完成，再重新備份及查核重複列。
 去重與 release migration 成功後驗證 runtime、資料及服務，才關閉維護模式。
