@@ -16,3 +16,9 @@
 	+ 支持貼上網頁碼新增表符
 + 支援登入收藏表符
     + 使用Google帳號登入
+
+## 開發與部署
+
+Python 3.12、Django 5.2 LTS、Heroku-26。Windows 請先設定專案外的
+`UV_PROJECT_ENVIRONMENT`，再以 uv 同步鎖定套件。
+資料庫副本驗證、正式部署與回復步驟見 [2026 升級紀錄](docs/upgrade-2026.md)。
