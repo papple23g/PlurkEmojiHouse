@@ -75,7 +75,7 @@ def EmojiDictList(Emoji_list, user_uid=None):
     Emoji_dict_list = []
     if user_uid:
         for emoji in Emoji_list:
-            Emoji_dict = model_to_dict(emoji)
+            Emoji_dict = model_to_dict(emoji, exclude=('tags',))
             tag_name_list = [tag.name for tag in emoji.tags.all()]
             emoji_tags_names_filtered_list = [
                 tag_name.replace("__collectorUsers__" + user_uid, "__be_collected__")
@@ -86,7 +86,7 @@ def EmojiDictList(Emoji_list, user_uid=None):
             Emoji_dict_list.append(Emoji_dict)
     else:
         for emoji in Emoji_list:
-            Emoji_dict = model_to_dict(emoji)
+            Emoji_dict = model_to_dict(emoji, exclude=('tags',))
             tag_name_list = [tag.name for tag in emoji.tags.all()]
             emoji_tags_names_filtered_list = [
                 tag_name for tag_name in tag_name_list

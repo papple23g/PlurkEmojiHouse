@@ -5,7 +5,9 @@ from unittest.mock import Mock, patch
 import imagehash
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.db import connection
 from django.test import Client
+from django.test.utils import CaptureQueriesContext
 from django.urls import resolve
 from PIL import Image
 from taggit.models import Tag, TaggedItem
@@ -100,3 +102,19 @@ def test_saved_hash_search_uses_existing_values_without_downloading() -> None:
     with patch('myapp.models.req.get', side_effect=AssertionError('Stored hashes must not be downloaded')):
         results = Client().get('/PlurkEmojiHouse/search_by_tag', {'search_tag': f'__hash__{emojis[0].pk}'}).json()
     assert [row['id'] for row in results] == [emojis[1].pk]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('user_uid', [None, 'upgrade_a'])
+def test_search_does_not_query_tags_for_each_emoji(user_uid: str | None) -> None:
+    for index in range(20):
+        emoji = Emoji.objects.create(url=f'https://emos.plurk.com/prefetch{index}_w48_h48.png')
+        emoji.tags.add('貓咪')
+    ContentType.objects.clear_cache()
+    params = {'search_tag': ''}
+    if user_uid:
+        params['user_uid'] = user_uid
+    with CaptureQueriesContext(connection) as queries:
+        results = Client().get('/PlurkEmojiHouse/search_by_tag', params).json()
+    assert len(results) == 20
+    assert len(queries) <= 3, 'Tag queries must stay bounded when the result page grows'
