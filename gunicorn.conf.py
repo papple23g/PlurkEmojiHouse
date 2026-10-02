@@ -2,6 +2,9 @@ import os
 
 worker_class = "gthread"
 
+# gthread 的非阻塞 socket 不支援 Python 3.12 sendfile；改用正常串流傳送靜態檔。
+sendfile = False
+
 workers = int(os.environ.get("WEB_CONCURRENCY", "2"))
 
 threads = 4

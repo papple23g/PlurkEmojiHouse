@@ -65,6 +65,7 @@ git push heroku HEAD:master
 ```
 
 確認建置確實執行 `collectstatic`，再以正式 WSGI 逐一驗證管理頁引用的靜態檔及公開頁面。
+正式 v153 驗收發現 Gunicorn 24 的 `gthread` 在非阻塞 socket 呼叫 Python 3.12 `sendfile`，使部分靜態回應雖為 200 卻沒有內容，日誌記錄 H18 與 `ValueError`。在既有設定中指定 `sendfile = False`，沿用原靜態服務及正常串流；驗收須比較實際檔案內容，不能只看 HTTP 狀態。
 
 第二階段先進入維護模式、確認背景與 one-off 作業未在寫入資料，等待現有請求完成，再重新備份及查核重複列。
 去重與 release migration 成功後驗證 runtime、資料及服務，才關閉維護模式。
