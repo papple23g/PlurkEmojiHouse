@@ -14,13 +14,17 @@ from django.utils import timezone
 from myapp.models import SiteViews
 
 
+@pytest.mark.django_db
 def test_postgresql_timezone_compatibility() -> None:
-    from mysite2.postgresql.base import utc_tzinfo_factory
-
-    assert utc_tzinfo_factory(0) == datetime.timezone.utc
-    assert utc_tzinfo_factory(datetime.timedelta(0)) == datetime.timezone.utc
-    with pytest.raises(AssertionError):
-        utc_tzinfo_factory(datetime.timedelta(hours=8))
+    if connection.vendor != 'postgresql':
+        pytest.skip('Timezone compatibility requires PostgreSQL')
+    timestamp = timezone.now()
+    SiteViews.objects.create(
+        name='PlurkEmojiHouse', total=123, imported_total=123, imported_at=timestamp
+    )
+    restored = SiteViews.objects.get(pk='PlurkEmojiHouse').imported_at
+    assert restored == timestamp
+    assert restored.utcoffset() == datetime.timedelta(0)
 
 
 @pytest.mark.django_db

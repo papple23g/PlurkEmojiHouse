@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'myapp',
 ]
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -130,8 +132,6 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_L10N = True
-
 USE_TZ = True
 
 # 單機記憶體快取（Heroku 每個 worker 行程各自一份，仍可減輕 COUNT 尖峰）
@@ -152,8 +152,6 @@ if 'DATABASE_URL' in os.environ:
     import dj_database_url
     # Heroku：長時間 conn_max_age 易拿到已被平台回收的連線，造成請求掛死 → H12
     DATABASES = {'default': dj_database_url.config(conn_max_age=0)}
-    if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql_psycopg2':
-        DATABASES['default']['ENGINE'] = 'mysite2.postgresql'
     # Static asset configuration.
     STATIC_ROOT= os.path.join(BASE_DIR,'static')
     # Honor the 'X-Forwarded-Proto' header for request.is_secure().
