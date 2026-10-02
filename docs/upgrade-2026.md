@@ -39,6 +39,7 @@ Plurk 整合測試會呼叫外部 API，外部服務異常須與本次相容性�
 
 正式部署、維護模式、資料修改及正式功能測試，只能在使用者確認的凌晨日期與時段執行，時間以 `Asia/Taipei` 為準。
 「執行計畫」不代表取消部署時段限制；尚未確認具體時段時，只能完成本機準備與驗證。
+2026/10/02 使用者明確指示「改成現在」，授權立即部署剩餘頁尾與管理後台靜態檔修正及正式驗收；這次不新增 migration、不重做去重，維持 `web=1`。
 
 每次部署前確認精準提交與乾淨工作樹，使用 Heroku Git：
 
@@ -53,7 +54,7 @@ v151 的建置紀錄顯示 `DISABLE_COLLECTSTATIC` 仍然啟用，來源內的 `
 `.slugignore` 排除這份舊目錄，交由 Heroku 的原生 `collectstatic` 從已鎖定的 Django 套件重新收集；沿用 `dj-static` 服務方式。
 參考 [Heroku 靜態檔建置說明](https://devcenter.heroku.com/articles/django-assets) 與 [slugignore 規則](https://devcenter.heroku.com/articles/slug-compiler#ignoring-files-with-slugignore)。
 
-**以下都是正式變更，只能在已確認的凌晨時段操作；目前尚未執行。**
+**以下都是正式變更，須有當次時段授權；本次使用者已明確改為立即執行。**
 解除 `DISABLE_COLLECTSTATIC` 會建立 release，須納入當次版本紀錄。接著才部署已提交的 HEAD：
 
 ```powershell
