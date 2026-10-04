@@ -1,4 +1,5 @@
 from pathlib import Path
+import ast
 import re
 from html import unescape
 
@@ -43,3 +44,20 @@ def test_shared_articles_and_fallback_navigation() -> None:
     assert '其他廣告供應商' in privacy and '其他網站' in privacy
     assert 'Cookie' in privacy and 'myadcenter.google.com' in privacy
     assert 'aboutads.info/choices/' in privacy
+
+
+@pytest.mark.django_db
+def test_standalone_author_links_point_to_the_existing_author_information() -> None:
+    root = Path(__file__).resolve().parents[1]
+    tree = ast.parse((root / 'templates/PlurkEmojiPage.py').read_text(encoding='utf-8'))
+    author = next(node for node in tree.body if isinstance(node, ast.FunctionDef)
+                  and node.name == 'DIV_about_author')
+    author_url = next(keyword.value.value for node in ast.walk(author) if isinstance(node, ast.Call)
+                      and isinstance(node.func, ast.Name) and node.func.id == 'IFRAME'
+                      for keyword in node.keywords if keyword.arg == 'src')
+    assert author_url.startswith('https://hackmd.io/')
+    client = Client()
+    for path in ('/guide', '/privacy', '/PlurkEmojiHouse'):
+        content = client.get(path).content.decode()
+        links = re.findall(r'<a href="([^"]+)" data-author-link>', content)
+        assert links and all(link == author_url for link in links)
