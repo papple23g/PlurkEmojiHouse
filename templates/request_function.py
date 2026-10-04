@@ -128,6 +128,8 @@ AddStyle('''
 
 #*搜尋表符並顯示結果*
 def SendRequest_searchEmoji(ev):
+    _pg['search_serial'] = _pg.get('search_serial', 0) + 1
+    search_serial = _pg['search_serial']
     page=0 #頁籤預設為第一頁
     request_type=None #搜尋方式變數
     num_of_emoji_per_page=None
@@ -168,30 +170,45 @@ def SendRequest_searchEmoji(ev):
 
     #定義動作:等待搜尋結果中，顯示提示訊息
     def OnLoading_searchEmoji(res):
+        if search_serial != _pg['search_serial']:
+            return
         #清空表符結果區塊以便顯示新的結果
         doc['emoji_result_table'].clear()
         doc['emoji_result_table']<=P("搜尋表符中...")
 
     #定義動作:顯示表符搜尋結果TABLE
-    def OnComplete_searchEmoji(res):
+    def OnComplete_searchEmoji(res: object) -> None:
+        if search_serial != _pg['search_serial']:
+            return
         doc['emoji_result_table'].clear()
-        if not res.text:
+        if res.status != 200 or not res.text:
             doc['emoji_result_table']<=P("搜尋失敗，請稍後再試")
+            doc['emoji_page_btns'].clear()
             return
         if res.text[0]==u'沒':
             doc['emoji_result_table']<=P(res.text)
+            doc['emoji_page_btns'].clear()
         else:
             try:
-                if res.text[0] == '[':
-                    items = json.loads(res.text)
-                    if isinstance(items, list) and items:
-                        pp = _pg.get("pending_page", 0)
-                        ids = [int(x['id']) for x in items if 'id' in x]
-                        if ids:
-                            _pg.setdefault("before_id_for_page", {})
-                            _pg["before_id_for_page"][pp + 2] = min(ids)
-            except Exception:
-                pass
+                items = json.loads(res.text)
+                if not isinstance(items, list):
+                    raise ValueError
+                if items == []:
+                    message = "沒有符合條件的表符"
+                    if search_tag_str.startswith('__hash__') and (',__collectorUsers__' in search_tag_str or ',__showCombindEmojis__' in search_tag_str):
+                        message += "，可取消「顯示我的收藏」或「組合表符」再試"
+                    doc['emoji_result_table']<=P(message)
+                    doc['emoji_page_btns'].clear()
+                    return
+                pp = _pg.get("pending_page", 0)
+                ids = [int(x['id']) for x in items if 'id' in x]
+                if ids:
+                    _pg.setdefault("before_id_for_page", {})
+                    _pg["before_id_for_page"][pp + 2] = min(ids)
+            except (ValueError, TypeError):
+                doc['emoji_result_table']<=P("搜尋失敗，請稍後再試")
+                doc['emoji_page_btns'].clear()
+                return
             #根據當前的表符結果顯示設定來顯示表符欄位/網格
             if "on_pressed" in doc['div_fa_list'].classList:
                 doc['emoji_result_table']<=TABLE_emojiReslut(res)
@@ -204,6 +221,8 @@ def SendRequest_searchEmoji(ev):
                 _build_pagination(_pg.get("pending_page", 0) + 1)
     
     def Timeout_searchEmoji(res):
+        if search_serial != _pg['search_serial']:
+            return
         doc['emoji_result_table'].clear()
         doc['emoji_result_table']<=P("搜尋逾時，請重新整理頁面後再試一次")
         doc['emoji_page_btns'].clear()
