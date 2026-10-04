@@ -129,3 +129,72 @@ def test_preview_is_loopback_only(settings: object) -> None:
     content = client.get('/?preview_layout=b', HTTP_HOST='127.0.0.1:8775').content.decode()
     assert 'id="plurk-ad-preview"' in content and 'data-variant="b"' in content
     assert 'data-variant="a"' in client.get('/?preview_layout=invalid', HTTP_HOST='localhost').content.decode()
+
+
+@pytest.mark.parametrize('count_first', [True, False])
+def test_single_page_search_removes_old_pagination_in_both_response_orders(count_first: bool) -> None:
+    source = Path(__file__).resolve().parents[1] / 'templates/request_function.py'
+    callbacks = [node for node in ast.walk(ast.parse(source.read_text(encoding='utf-8')))
+                 if isinstance(node, ast.FunctionDef)
+                 and node.name in ('_build_pagination', 'OnComplete_searchEmoji', 'OnComplete_insertEmojiPageBtn')]
+
+    class Element:
+        def __init__(self) -> None:
+            self.content: list[str] = []
+            self.style = SimpleNamespace(display='block')
+            self.classList = ['on_pressed']
+
+        def clear(self) -> None:
+            self.content.clear()
+
+        def __le__(self, content: str) -> bool:
+            self.content.append(content)
+            return True
+
+    doc = {key: Element() for key in ('emoji_result_table', 'emoji_page_btns', 'div_fa_list', 'initial_gallery')}
+    doc['emoji_page_btns'].content = ['old search pages 1/2/3']
+    namespace = {'doc': doc, 'json': json, 'P': str,
+                 '_pg': {'total': 0, 'tag': '', 'pending_page': 0, 'results_ready': False},
+                 'request_sequence': 1, '_search_request_sequence': 1,
+                 'search_tag_str': '企鵝', 'num_of_emoji_per_page': 20,
+                 'window': SimpleNamespace(plurkSidebar=SimpleNamespace(setSearchState=Mock())),
+                 'TABLE_emojiReslut': Mock(return_value='企鵝 result'),
+                 'request_type': 'search emoji by input tag'}
+    exec(compile(ast.Module(body=callbacks, type_ignores=[]), str(source), 'exec'), namespace)
+    count = SimpleNamespace(status=200, text='1')
+    result = SimpleNamespace(status=200, text=json.dumps([
+        {'id': 9, 'url': 'https://emos.plurk.com/example.png', 'tags': '企鵝'},
+    ]))
+    responses = [('OnComplete_insertEmojiPageBtn', count), ('OnComplete_searchEmoji', result)]
+    for name, response in responses if count_first else reversed(responses):
+        namespace[name](response)
+    assert doc['emoji_result_table'].content == ['企鵝 result']
+    assert doc['emoji_page_btns'].content == []
+
+
+def test_pending_search_blocks_old_page_buttons_without_sending_a_stale_query() -> None:
+    source = Path(__file__).resolve().parents[1] / 'templates/request_function.py'
+    sender = next(node for node in ast.parse(source.read_text(encoding='utf-8')).body
+                  if isinstance(node, ast.FunctionDef) and node.name == 'SendRequest_searchEmoji')
+    old_button = SimpleNamespace(id='', classList=['emoji_page_btn'], search_tag='', page_number=2,
+                                 disabled=False)
+    doc = {'search_tag': SimpleNamespace(value='企鵝'),
+           'div_fa_list': SimpleNamespace(classList=['on_pressed']),
+           'checkbox_showCollectEmojis': SimpleNamespace(checked=False),
+           'checkbox_showCombindEmojis': SimpleNamespace(checked=False),
+           'emoji_page_btns': SimpleNamespace(select=Mock(return_value=[old_button]))}
+    ajax_factory = Mock(return_value=Mock())
+    namespace = {'doc': doc, 'ajax': SimpleNamespace(ajax=ajax_factory),
+                 '_pg': {'total': 3, 'results_ready': True}, '_search_request_sequence': 0,
+                 'window': SimpleNamespace(firebase=SimpleNamespace(auth=Mock(
+                     return_value=SimpleNamespace(currentUser=None))),
+                     plurkSidebar=SimpleNamespace(setSearchState=Mock())),
+                 'SendRequest_insertEmojiPageBtn': Mock(), 'SendRequest_searchTags': Mock()}
+    exec(compile(ast.Module(body=[sender], type_ignores=[]), str(source), 'exec'), namespace)
+    namespace['SendRequest_searchEmoji'](SimpleNamespace(
+        currentTarget=SimpleNamespace(id='search_tag_btn', classList=[])))
+    assert old_button.disabled
+    assert ajax_factory.call_count == 1
+    namespace['SendRequest_searchEmoji'](SimpleNamespace(currentTarget=old_button))
+    assert ajax_factory.call_count == 1
+    assert namespace['_search_request_sequence'] == 1

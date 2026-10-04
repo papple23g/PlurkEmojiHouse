@@ -29,6 +29,7 @@ def _build_pagination(current_page):
         if is_nav:
             cls += " pg-nav"
         btn = BUTTON(str(label), Class=cls)
+        btn.disabled = disabled or not _pg.get('results_ready', False)
         btn.page_number = page_num
         btn.search_tag = tag
         if isinstance(page_num, int):
@@ -129,6 +130,8 @@ AddStyle('''
 
 #*搜尋表符並顯示結果*
 def SendRequest_searchEmoji(ev: object) -> None:
+    if "emoji_page_btn" in ev.currentTarget.classList and not _pg.get('results_ready', False):
+        return
     global _search_request_sequence
     _search_request_sequence += 1
     request_sequence = _search_request_sequence
@@ -226,8 +229,7 @@ def SendRequest_searchEmoji(ev: object) -> None:
         #若為網址新增表符動作，則清空搜尋欄文字
         if request_type=="search or add emoji by input url":
             doc['search_tag'].value=""
-        if _pg.get("total", 0) > 1:
-            _build_pagination(_pg.get("pending_page", 0) + 1)
+        _build_pagination(_pg.get("pending_page", 0) + 1)
     
     def Timeout_searchEmoji(res: object) -> None:
         if request_sequence != _search_request_sequence:
@@ -265,6 +267,8 @@ def SendRequest_searchEmoji(ev: object) -> None:
     _pg['failed_sequence'] = None
     if request_type != "search emoji by click page button":
         _pg['total'] = 0
+    for button in doc['emoji_page_btns'].select('button'):
+        button.disabled = True
     window.plurkSidebar.setSearchState('loading')
 
     #根據不同搜尋方式設定request
