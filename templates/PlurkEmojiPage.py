@@ -865,5 +865,5 @@ change_ev = window.Event.new("change")
 doc['select_adding_emoji_method'].dispatchEvent(change_ev)
 
 
-#讀取Firebase瀏覽人數資料並且顯示出來
+#記錄本次頁面瀏覽並顯示累積數
 ShowAndUpdateWebSiteViews()

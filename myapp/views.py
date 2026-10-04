@@ -3,8 +3,9 @@ from __future__ import unicode_literals
 
 import json
 import logging
-from enum import StrEnum
+from http import HTTPStatus
 from functools import reduce
+from enum import StrEnum
 
 import certifi
 import imagehash
@@ -19,13 +20,15 @@ from taggit.models import Tag
 from myapp.views import *
 
 '''
-from django.db import DatabaseError
-from django.db.models import Count, Q
-from django.http import HttpResponse, HttpRequest
+from django.db import DatabaseError, transaction
+from django.db.models import Count, Q, F
+from django.http import HttpResponse, HttpRequest, JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.cache import never_cache
 from django.shortcuts import render
 from taggit.models import Tag
 
-from myapp.models import CombindEmoji, Emoji, HashOfImage_inputUrl
+from myapp.models import CombindEmoji, Emoji, HashOfImage_inputUrl, SiteViews
 
 STATS_CACHE_TTL = 60
 EMOJI_TOTAL_CACHE_TTL = 45
@@ -77,6 +80,21 @@ def PlurkEmojiHouse(request: HttpRequest) -> HttpResponse:
         'sidebar_variant': variant.value,
     })
 
+
+@never_cache
+@require_POST
+def record_site_view(request: HttpRequest) -> JsonResponse:
+    # ponytail: counts page loads, not unique people; use GA4 for audience metrics.
+    try:
+        with transaction.atomic():
+            updated = SiteViews.objects.filter(pk="PlurkEmojiHouse").update(total=F("total") + 1)
+            if not updated:
+                return JsonResponse({"error": "counter_not_initialized"}, status=HTTPStatus.SERVICE_UNAVAILABLE)
+            total = SiteViews.objects.get(pk="PlurkEmojiHouse").total
+    except DatabaseError:
+        logging.getLogger(__name__).exception("Failed to record page view")
+        return JsonResponse({"error": "counter_unavailable"}, status=HTTPStatus.SERVICE_UNAVAILABLE)
+    return JsonResponse({"total": total})
 
 
 # 定義動作，將QuerySet形式的表符串列轉化成字典串列，一個字典的key包含id,url,tags，其中tags內的標籤之間用逗號區隔
