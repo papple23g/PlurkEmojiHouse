@@ -5,11 +5,13 @@ import json
 import logging
 from http import HTTPStatus
 from functools import reduce
+from enum import StrEnum
 
 import certifi
 import imagehash
 import requests
 from django.core.cache import cache
+from django.conf import settings
 from django.forms.models import model_to_dict
 
 '''
@@ -49,8 +51,34 @@ def Correcting_emojiUrl(emoji_url):
         return False
 
 
-def PlurkEmojiHouse(request):
-    return render(request, "PlurkEmojiHouse.html",)
+class SidebarPreviewVariant(StrEnum):
+    NEAR = 'a'
+    EDGE = 'b'
+
+
+def PlurkEmojiHouse(request: HttpRequest) -> HttpResponse:
+    try:
+        initial_emojis = EmojiDictList(
+            Emoji.objects.prefetch_related('tags').order_by('-id')[:20]
+        )
+    except DatabaseError:
+        logging.getLogger(__name__).exception("Failed to load initial emoji gallery")
+        initial_emojis = []
+    for emoji in initial_emojis:
+        emoji['tag_labels'] = [tag for tag in emoji['tags'].split(',') if tag]
+    is_local_preview = (
+        getattr(settings, 'PLURK_LAYOUT_PREVIEW', False)
+        and request.get_host().split(':')[0] in ('127.0.0.1', 'localhost')
+    )
+    try:
+        variant = SidebarPreviewVariant(request.GET.get('preview_layout', 'a')) if is_local_preview else SidebarPreviewVariant.NEAR
+    except ValueError:
+        variant = SidebarPreviewVariant.NEAR
+    return render(request, "PlurkEmojiHouse.html", {
+        'initial_emojis': initial_emojis,
+        'is_local_preview': is_local_preview,
+        'sidebar_variant': variant.value,
+    })
 
 
 @never_cache

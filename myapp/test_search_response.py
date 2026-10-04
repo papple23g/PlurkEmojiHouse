@@ -20,6 +20,7 @@ def browser_search() -> dict[str, Any]:
     doc = {name: MagicMock() for name in (
         'div_fa_list', 'search_tag', 'search_tag_result', 'emoji_result_table', 'emoji_page_btns',
         'checkbox_showCollectEmojis', 'checkbox_showCombindEmojis',
+        'initial_gallery',
     )}
     doc['emoji_result_table'].__le__.return_value = True
     doc['div_fa_list'].classList = ['on_pressed']
@@ -29,16 +30,17 @@ def browser_search() -> dict[str, Any]:
     auth = Mock(return_value=SimpleNamespace(currentUser=None))
     request = MagicMock()
     namespace = {
-        'doc': doc, 'window': SimpleNamespace(firebase=SimpleNamespace(auth=auth)),
+        'doc': doc, 'window': SimpleNamespace(firebase=SimpleNamespace(auth=auth), plurkSidebar=SimpleNamespace(setSearchState=Mock())),
         'ajax': SimpleNamespace(ajax=Mock(return_value=request)), 'json': json,
-        '_pg': {'total': 1, 'before_id_for_page': {}}, 'P': Mock(side_effect=str),
+        '_pg': {'total': 1, 'before_id_for_page': {}, 'results_ready': True}, 'P': Mock(side_effect=str),
+        '_search_request_sequence': 0,
         'TABLE_emojiReslut': Mock(return_value='table'), 'DIV_emojiReslut_Block': Mock(return_value='grid'),
         '_build_pagination': Mock(), 'SendRequest_insertEmojiPageBtn': Mock(), 'SendRequest_searchTags': Mock(),
     }
     exec(compile(ast.Module(body=[function], type_ignores=[]), str(source), 'exec'), namespace)
     namespace['request'] = request
     namespace['auth'] = auth
-    namespace['event'] = SimpleNamespace(currentTarget=SimpleNamespace(id='search_tag_btn'))
+    namespace['event'] = SimpleNamespace(currentTarget=SimpleNamespace(id='search_tag_btn', classList=[]))
     return namespace
 
 
@@ -62,17 +64,17 @@ def test_browser_search_builds_hash_and_filter_request(
     )
     state['request'].send.assert_called_once()
     state['request'].set_timeout.assert_called_once()
-    state['SendRequest_insertEmojiPageBtn'].assert_called_once_with('__hash__61935' + suffix, 20)
+    state['SendRequest_insertEmojiPageBtn'].assert_called_once_with('__hash__61935' + suffix, 20, 1)
 
 
 @pytest.mark.parametrize('status,text,expected', [
     (500, '<html>error</html>', '搜尋失敗，請稍後再試'),
     (0, '', '搜尋失敗，請稍後再試'),
     (200, '', '搜尋失敗，請稍後再試'),
-    (200, '<html>not JSON</html>', '搜尋失敗，請稍後再試'),
-    (200, '{}', '搜尋失敗，請稍後再試'),
-    (200, 'null', '搜尋失敗，請稍後再試'),
-    (200, '[{"id": "invalid"}]', '搜尋失敗，請稍後再試'),
+    (200, '<html>not JSON</html>', '搜尋結果格式錯誤，請稍後再試'),
+    (200, '{}', '搜尋結果格式錯誤，請稍後再試'),
+    (200, 'null', '搜尋結果格式錯誤，請稍後再試'),
+    (200, '[{"id": "invalid"}]', '搜尋結果格式錯誤，請稍後再試'),
     (200, '[]', '沒有符合條件的表符'),
     (200, '沒有該圖片的搜尋結果', '沒有該圖片的搜尋結果'),
 ])
@@ -109,7 +111,10 @@ def test_browser_search_renders_results_and_records_cursor(browser_search: dict[
     state['_pg']['total'] = 3
     state['SendRequest_searchEmoji'](state['event'])
     callbacks = dict(call.args for call in state['request'].bind.call_args_list)
-    response = SimpleNamespace(status=200, text='[{"id": 99}, {"id": 42}]')
+    response = SimpleNamespace(status=200, text=json.dumps([
+        {'id': 99, 'url': 'https://emos.plurk.com/first.png', 'tags': '開心'},
+        {'id': 42, 'url': 'https://emos.plurk.com/second.png', 'tags': '貓'},
+    ]))
     callbacks['complete'](response)
     renderer = state['TABLE_emojiReslut'] if list_view else state['DIV_emojiReslut_Block']
     renderer.assert_called_once_with(response)

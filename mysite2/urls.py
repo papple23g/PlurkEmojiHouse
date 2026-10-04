@@ -25,6 +25,7 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^ads\.txt$', TemplateView.as_view(template_name='ads.txt', content_type='text/plain')),
     url(r'^privacy/?$', TemplateView.as_view(template_name='privacy.html'), name='privacy'),
+    url(r'^guide/?$', TemplateView.as_view(template_name='guide.html'), name='guide'),
     url(r'^PlurkEmojiHouse/views$', record_site_view, name='record_site_view'),
     url(r'^$',PlurkEmojiHouse),
     url(r'^PlurkEmojiHouse$',PlurkEmojiHouse),
