@@ -93,6 +93,7 @@ def DIV_bars():
             aButton_bar_previous_elt.classList.remove("AButton_bar_actived")
             aButton_bar_jumpto_elt=ev.currentTarget
             aButton_bar_jumpto_elt.classList.add("AButton_bar_actived")
+            window.plurkSidebar.setSubpage(bar_name)
     #排版:設置導覽列bars的順序
     '第一個bar:初始設定已經被按下'
     AButton_bar_frist=DIV_ButtonBar("搜尋表符",id="button_bar_search_emoji")
@@ -173,6 +174,7 @@ AddStyle('''
 def DIV_subpage_searchEmoji():
     div_elt=DIV(id="搜尋表符",Class="subpage",style={"display":"block"})
     div_card_elt=DIV(Class="div_input_card")
+    div_card_elt<=P("", id="search_update_status", role="status")
     div_block_elt=DIV(Class="div_input_block",style={"float":"left"})
     div_block_elt<=BR()
     #定義[搜尋表符標籤文字框]按下Enter送出
@@ -259,24 +261,8 @@ def DIV_subpage_searchEmoji():
     )
     #設置說明區塊
     def DIV_description():
-        #定義綁定同步滑鼠覆蓋動作以顯示文字框
-        def ShowDescription(ev):
-            mouseover_ev = window.MouseEvent.new("click")
-            icon_description_elt=doc['div_description'].select('.fa-question-circle')[0]
-            icon_description_elt.dispatchEvent(mouseover_ev)
-        div_elt=DIV(
-            id="div_description",
-            style={
-                "float":"right",
-            }
-        )
-        div_elt<=DIV_showTipText(
-            I(Class="far fa-question-circle")+"說明",
-            '使用步驟說明:'+BR()
-            +'1. 搜尋表符關鍵字(或者直接點擊標籤)'+BR()
-            +'2. 複製表符圖片網址(或者直接點擊表符)'+BR()
-            +'3. 貼上至噗浪即可顯示表符'
-            )
+        div_elt=DIV(id="div_description", style={"float":"right"})
+        div_elt<=A(I(Class="far fa-question-circle")+"說明", href="/guide", id="search_help_trigger")
 
         return div_elt
 
@@ -429,10 +415,23 @@ AddStyle('''
         text-align: left !important;
         padding: 5px !important;
         margin-left: -250px !important;
+        bottom: auto !important;
+        top: 100%;
+        margin-top: 8px;
+    }
+    #div_description .tooltiptext ul{
+        margin: 6px 0 0;
+        padding-left: 20px;
+    }
+    #div_description .tooltiptext li{
+        margin: 5px 0;
+        line-height: 1.6;
     }
 
     #div_description .span_tooltip_trangle{
         margin-left: 100px !important;
+        top: -10px !important;
+        border-color: transparent transparent black transparent !important;
     }
     #div_description{
         margin-top: 5px;
@@ -854,6 +853,8 @@ doc<=DIV_subpage_addEmoji()
 doc<=DIV_subpage_updateDiary()
 doc<=DIV_otherProduction()
 doc<=DIV_about_author()
+
+window.plurkSidebar.mount()
 
 #進入前直接顯示全部表符
 doc['show_all_emoji_btn'].click()

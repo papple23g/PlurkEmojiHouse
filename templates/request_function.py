@@ -3,6 +3,7 @@
 """
 
 _pg = {"total": 0, "tag": "", "per_page": 20, "before_id_for_page": {}}
+_search_request_sequence = 0
 
 def _build_pagination(current_page):
     total = _pg["total"]
@@ -127,7 +128,10 @@ AddStyle('''
 
 
 #*搜尋表符並顯示結果*
-def SendRequest_searchEmoji(ev):
+def SendRequest_searchEmoji(ev: object) -> None:
+    global _search_request_sequence
+    _search_request_sequence += 1
+    request_sequence = _search_request_sequence
     page=0 #頁籤預設為第一頁
     request_type=None #搜尋方式變數
     num_of_emoji_per_page=None
@@ -167,46 +171,74 @@ def SendRequest_searchEmoji(ev):
         request_type="search emoji by click tag in search tag result"
 
     #定義動作:等待搜尋結果中，顯示提示訊息
-    def OnLoading_searchEmoji(res):
-        #清空表符結果區塊以便顯示新的結果
-        doc['emoji_result_table'].clear()
-        doc['emoji_result_table']<=P("搜尋表符中...")
+    def OnLoading_searchEmoji(res: object) -> None:
+        if request_sequence == _search_request_sequence:
+            window.plurkSidebar.setSearchState('loading')
 
     #定義動作:顯示表符搜尋結果TABLE
-    def OnComplete_searchEmoji(res):
+    def OnComplete_searchEmoji(res: object) -> None:
+        if request_sequence != _search_request_sequence:
+            return
         doc['emoji_result_table'].clear()
-        if not res.text:
+        doc['initial_gallery'].style.display="none"
+        _pg['results_ready'] = False
+        _pg['failed_sequence'] = request_sequence
+        window.plurkSidebar.setSearchState('error')
+        if res.status != 200 or not res.text:
             doc['emoji_result_table']<=P("搜尋失敗，請稍後再試")
+            doc['emoji_page_btns'].clear()
             return
         if res.text[0]==u'沒':
             doc['emoji_result_table']<=P(res.text)
+            doc['emoji_page_btns'].clear()
+            window.plurkSidebar.setSearchState('empty')
+            return
+        try:
+            items = json.loads(res.text)
+            if not isinstance(items, list) or any(
+                not isinstance(item, dict)
+                or not isinstance(item.get('id'), int) or item['id'] <= 0
+                or not isinstance(item.get('url'), str)
+                or not isinstance(item.get('tags'), str)
+                for item in items
+            ):
+                raise ValueError("Invalid emoji response")
+        except (ValueError, TypeError):
+            doc['emoji_result_table']<=P("搜尋結果格式錯誤，請稍後再試")
+            doc['emoji_page_btns'].clear()
+            return
+        if not items:
+            doc['emoji_result_table']<=P("沒有符合條件的表符")
+            doc['emoji_page_btns'].clear()
+            window.plurkSidebar.setSearchState('empty')
+            return
+        pp = _pg.get("pending_page", 0)
+        _pg.setdefault("before_id_for_page", {})[pp + 2] = min(item['id'] for item in items)
+        #根據當前的表符結果顯示設定來顯示表符欄位/網格
+        if "on_pressed" in doc['div_fa_list'].classList:
+            doc['emoji_result_table']<=TABLE_emojiReslut(res)
         else:
-            try:
-                if res.text[0] == '[':
-                    items = json.loads(res.text)
-                    if isinstance(items, list) and items:
-                        pp = _pg.get("pending_page", 0)
-                        ids = [int(x['id']) for x in items if 'id' in x]
-                        if ids:
-                            _pg.setdefault("before_id_for_page", {})
-                            _pg["before_id_for_page"][pp + 2] = min(ids)
-            except Exception:
-                pass
-            #根據當前的表符結果顯示設定來顯示表符欄位/網格
-            if "on_pressed" in doc['div_fa_list'].classList:
-                doc['emoji_result_table']<=TABLE_emojiReslut(res)
-            else:
-                doc['emoji_result_table']<=DIV_emojiReslut_Block(res)
-            #若為網址新增表符動作，則清空搜尋欄文字
-            if request_type=="search or add emoji by input url":
-                doc['search_tag'].value=""
-            if _pg.get("total", 0) > 1:
-                _build_pagination(_pg.get("pending_page", 0) + 1)
+            doc['emoji_result_table']<=DIV_emojiReslut_Block(res)
+        doc['initial_gallery'].style.display="none"
+        _pg['results_ready'] = True
+        _pg['failed_sequence'] = None
+        window.plurkSidebar.setSearchState('ready')
+        #若為網址新增表符動作，則清空搜尋欄文字
+        if request_type=="search or add emoji by input url":
+            doc['search_tag'].value=""
+        if _pg.get("total", 0) > 1:
+            _build_pagination(_pg.get("pending_page", 0) + 1)
     
-    def Timeout_searchEmoji(res):
+    def Timeout_searchEmoji(res: object) -> None:
+        if request_sequence != _search_request_sequence:
+            return
         doc['emoji_result_table'].clear()
         doc['emoji_result_table']<=P("搜尋逾時，請重新整理頁面後再試一次")
         doc['emoji_page_btns'].clear()
+        doc['initial_gallery'].style.display="none"
+        _pg['results_ready'] = False
+        _pg['failed_sequence'] = request_sequence
+        window.plurkSidebar.setSearchState('error')
 
     #若為表符網址，則設定url為搜尋或新增表符
     if "s.plurk.com" in search_tag_str:
@@ -229,6 +261,11 @@ def SendRequest_searchEmoji(ev):
         _pg["before_id_for_page"] = {}
 
     _pg["pending_page"] = page
+    _pg['results_ready'] = False
+    _pg['failed_sequence'] = None
+    if request_type != "search emoji by click page button":
+        _pg['total'] = 0
+    window.plurkSidebar.setSearchState('loading')
 
     #根據不同搜尋方式設定request
     if request_type=="search or add emoji by input url":
@@ -249,25 +286,37 @@ def SendRequest_searchEmoji(ev):
 
     #若不是以頁籤進行搜尋，則進行生成頁籤按鈕請求處理
     if request_type!="search emoji by click page button":
-        SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page)
+        SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page,request_sequence)
     
     #若是輸入標籤搜尋或點擊標籤搜尋，就搜尋相似的標籤 (排除空白關鍵字)
     if search_tag_str.strip():
         if request_type in ["search emoji by input tag","search emoji by click tag in emoji tag list"]:
-            SendRequest_searchTags(search_tag_str)
+            SendRequest_searchTags(search_tag_str,request_sequence)
 
 #定義請求動作:顯示表符搜尋結果的頁籤按鈕
-def SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page):
+def SendRequest_insertEmojiPageBtn(
+    search_tag_str: str,
+    num_of_emoji_per_page: int,
+    request_sequence: int,
+) -> None:
     doc['emoji_page_btns'].classList.remove('hidden')
-    doc['emoji_page_btns'].clear()
 
-    def OnComplete_insertEmojiPageBtn(res):
-        doc['emoji_page_btns'].clear()
-        num_of_emoji_page_btn=int(res.text)
+    def OnComplete_insertEmojiPageBtn(res: object) -> None:
+        if request_sequence != _search_request_sequence or _pg.get('failed_sequence') == request_sequence:
+            return
+        try:
+            if res.status != 200:
+                raise ValueError('Pagination request failed')
+            num_of_emoji_page_btn=int(res.text)
+        except (ValueError, TypeError):
+            _pg['total'] = 0
+            doc['emoji_page_btns'].clear()
+            return
         _pg["total"] = num_of_emoji_page_btn
         _pg["tag"] = search_tag_str
         _pg["per_page"] = num_of_emoji_per_page
-        _build_pagination(1)
+        if _pg.get('results_ready'):
+            _build_pagination(_pg.get('pending_page', 0) + 1)
 
     url=f'/PlurkEmojiHouse/numOfEmojiPageBtn?search_tag={search_tag_str}&num_of_emoji_per_page={num_of_emoji_per_page}'
     req = ajax.ajax()
@@ -277,9 +326,11 @@ def SendRequest_insertEmojiPageBtn(search_tag_str,num_of_emoji_per_page):
     req.send()
 
 #定義送出請求動作:其他搜尋關鍵字的情況則同時搜尋相似標籤
-def SendRequest_searchTags(search_tag_str):
+def SendRequest_searchTags(search_tag_str: str, request_sequence: int) -> None:
     #定義完成搜尋標籤時的動作
-    def OnComplete_searchTags(res):
+    def OnComplete_searchTags(res: object) -> None:
+        if request_sequence != _search_request_sequence:
+            return
         #獲取符合搜尋的標籤和被使用次數的兩個串列
         tag_list,num_of_tagged_list=json.loads(res.text)
         #根據被標籤次數排序內容:先倆倆綁定，排序，再解除綁定

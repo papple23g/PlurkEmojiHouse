@@ -1,0 +1,8 @@
+.publisher-back{display:inline-block;background:#146b45;color:white!important;padding:9px 16px;border-radius:6px;text-decoration:none}
+.publisher-article{font:16px/1.8 system-ui,sans-serif;color:#222;text-align:left;overflow-wrap:anywhere}
+.publisher-article h1{font-size:24px;line-height:1.4}.publisher-article h2{font-size:20px;line-height:1.4;margin-top:28px}.publisher-article a{color:#146b45}
+.help-steps{padding-left:24px;margin:16px 0}.help-steps li{margin:12px 0}
+.guide-tag{display:inline-block;background:rgba(50,100,255,.7);color:white;border-radius:18px;padding:2px 12px;font-size:14px;font-weight:bold;box-shadow:2px 2px 0 #ccc;cursor:default}
+.help-tag-demo{margin-top:8px}.help-icon{display:inline-block;width:20px;height:20px;vertical-align:middle;margin:0 3px;color:#777}.help-heart{color:#8794ee}
+.help-views{display:inline-flex;vertical-align:middle;border:1px solid #aaa;border-radius:6px;margin:0 4px;padding:2px 3px;gap:3px}
+.help-note,.help-rights{font-size:14px;color:#66726b;margin:12px 0}
