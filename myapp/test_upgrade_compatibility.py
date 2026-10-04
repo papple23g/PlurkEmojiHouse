@@ -105,6 +105,98 @@ def test_saved_hash_search_uses_existing_values_without_downloading() -> None:
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize('favorites,combined,expected_indices', [
+    (True, False, [3, 1]),
+    (False, True, [3, 2]),
+    (True, True, [3]),
+])
+def test_hash_search_accepts_favorite_and_combined_filters(
+    favorites: bool, combined: bool, expected_indices: list[int],
+) -> None:
+    base = Emoji.objects.create(url='https://emos.plurk.com/base.png', imagehash_str='39317363e7c6cc8c')
+    candidates = [Emoji.objects.create(url=f'https://emos.plurk.com/filter{i}.png', imagehash_str=base.imagehash_str) for i in range(4)]
+    for index in (1, 3):
+        candidates[index].tags.add('__collectorUsers__upgrade_a')
+    combination = CombindEmoji.objects.create(combind_url='https://emos.plurk.com/combined.png')
+    combination.emoji_url_set.add(candidates[2].url, candidates[3].url)
+    search_tag = f'__hash__{base.pk}'
+    if favorites:
+        search_tag += ',__collectorUsers__upgrade_a'
+    if combined:
+        search_tag += ',__showCombindEmojis__'
+    with patch('myapp.models.req.get', side_effect=AssertionError('Stored hashes must not be downloaded')):
+        response = Client().get('/PlurkEmojiHouse/search_by_tag', {'search_tag': search_tag, 'user_uid': 'upgrade_a'})
+    assert response.status_code == HTTPStatus.OK
+    assert [row['id'] for row in response.json()] == [candidates[index].pk for index in expected_indices]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('emoji_id', ['', 'invalid', '-1', '2147483648'])
+def test_invalid_hash_search_returns_a_message(emoji_id: str) -> None:
+    response = Client().get('/PlurkEmojiHouse/search_by_tag', {'search_tag': f'__hash__{emoji_id}'})
+    assert response.status_code == HTTPStatus.OK
+    assert response.content.decode() == '沒有該圖片的搜尋結果'
+
+
+@pytest.mark.django_db
+def test_hash_search_threshold_bad_candidates_and_json_privacy() -> None:
+    base = Emoji.objects.create(url='https://emos.plurk.com/threshold_base.png', imagehash_str='0000000000000000')
+    candidates = [Emoji.objects.create(url=f'https://emos.plurk.com/threshold{i}.png', imagehash_str=value)
+                  for i, value in enumerate(('0000000000000000', '000000000000007f', '00000000000000ff', 'broken', '', None))]
+    candidates[0].tags.add('貓咪', '__collectorUsers__upgrade_a', '__collectorUsers__upgrade_b')
+    with patch('myapp.models.req.get', side_effect=AssertionError('Stored hashes must not be downloaded')):
+        response = Client().get('/PlurkEmojiHouse/search_by_tag', {'search_tag': f'__hash__{base.pk}', 'user_uid': 'upgrade_a'})
+    assert response.status_code == HTTPStatus.OK
+    assert response['Content-Type'] == 'application/json'
+    rows = response.json()
+    assert [row['id'] for row in rows] == [candidates[1].pk, candidates[0].pk]
+    assert set(rows[0]) == {'id', 'url', 'tags', 'imagehash_str'}
+    assert '貓咪' in rows[1]['tags'] and '__be_collected__' in rows[1]['tags']
+    assert '__collectorUsers__' not in rows[1]['tags']
+    anonymous = Client().get('/PlurkEmojiHouse/search_by_tag', {'search_tag': f'__hash__{base.pk}'}).json()
+    assert all('__be_collected__' not in row['tags'] for row in anonymous)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('suffix', ['', ',__collectorUsers__nobody', ',__showCombindEmojis__', ',__showCombindEmojis__,__collectorUsers__nobody'])
+def test_hash_search_empty_filters_and_pagination(suffix: str) -> None:
+    base = Emoji.objects.create(url='https://emos.plurk.com/empty_base.png', imagehash_str='0000000000000000')
+    search_tag = f'__hash__{base.pk}{suffix}'
+    assert Client().get('/PlurkEmojiHouse/search_by_tag', {'search_tag': search_tag}).json() == []
+    pages = Client().get('/PlurkEmojiHouse/numOfEmojiPageBtn', {'search_tag': search_tag})
+    assert pages.status_code == HTTPStatus.OK and pages.content == b'1'
+
+
+@pytest.mark.django_db
+def test_hash_search_missing_source() -> None:
+    response = Client().get('/PlurkEmojiHouse/search_by_tag', {'search_tag': '__hash__61935,__collectorUsers__upgrade_a'})
+    assert response.status_code == HTTPStatus.OK
+    assert response.content.decode() == '沒有該圖片的搜尋結果'
+
+
+@pytest.mark.django_db
+def test_hash_search_calculates_source_once_and_preserves_candidates() -> None:
+    image = Image.new('L', (32, 32))
+    image.putdata([(x * 13 + y * 7) % 256 for y in range(32) for x in range(32)])
+    payload = BytesIO()
+    image.save(payload, format='PNG')
+    base = Emoji.objects.create(url='https://emos.plurk.com/uncached_source.png')
+    candidate = Emoji.objects.create(url='https://emos.plurk.com/cached_candidate.png', imagehash_str='39317363e7c6cc8c')
+    uncached_candidate = Emoji.objects.create(url='https://emos.plurk.com/uncached_candidate.png')
+    with patch('myapp.models.req.get', return_value=Mock(content=payload.getvalue())) as download:
+        for _ in range(2):
+            rows = Client().get('/PlurkEmojiHouse/search_by_tag', {'search_tag': f'__hash__{base.pk}'}).json()
+            assert [row['id'] for row in rows] == [candidate.pk]
+    download.assert_called_once()
+    assert download.call_args.args == (base.url,)
+    base.refresh_from_db()
+    candidate.refresh_from_db()
+    uncached_candidate.refresh_from_db()
+    assert base.imagehash_str == candidate.imagehash_str == '39317363e7c6cc8c'
+    assert uncached_candidate.imagehash_str is None
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize('user_uid', [None, 'upgrade_a'])
 def test_search_does_not_query_tags_for_each_emoji(user_uid: str | None) -> None:
     for index in range(20):

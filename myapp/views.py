@@ -99,7 +99,7 @@ def EmojiDictList(Emoji_list, user_uid=None):
 # 功能函數:輸入標籤，輸出表符字典串列，格式為[{"url":"...","id":[int],"tags":"A,B,..."}]
 
 
-def search_by_tag(request):
+def search_by_tag(request: HttpRequest) -> HttpResponse:
     # 獲取關鍵字與第幾頁面
     search_tag = request.GET.get('search_tag', "")
     i_page = int(request.GET.get('page', '0'))
@@ -108,7 +108,13 @@ def search_by_tag(request):
     # 若是使用hash數值搜尋相似圖片
     if search_tag.startswith('__hash__'):
         # 獲取指定要搜尋的emoji
-        emoji_id = search_tag[len('__hash__'):]
+        search_parts = search_tag.split(',')
+        try:
+            emoji_id = int(search_parts[0][len('__hash__'):])
+            if not 0 < emoji_id < 2 ** 31:
+                raise ValueError
+        except ValueError:
+            return HttpResponse(u"沒有該圖片的搜尋結果")
         emoji_qlist = Emoji.objects.filter(id=emoji_id)
         # 若該emoji存在
         if emoji_qlist:
@@ -121,10 +127,14 @@ def search_by_tag(request):
                 Emoji.objects.filter(imagehash_str__isnull=False)
                 .exclude(imagehash_str='')
                 .exclude(id=base_emoji.id)
-                .order_by('-id')
-                .iterator(chunk_size=500)
             )
-            for other in candidates:
+            for filter_tag in search_parts[1:]:
+                if filter_tag.startswith('__collectorUsers__'):
+                    candidates = candidates.filter(tags__name=filter_tag)
+            if '__showCombindEmojis__' in search_parts:
+                combined_urls = list(Tag.objects.filter(name__icontains='https://emos.plurk.com/').values_list('name', flat=True))
+                candidates = candidates.filter(url__in=combined_urls)
+            for other in candidates.order_by('-id').iterator(chunk_size=500):
                 try:
                     diff_int = base_hash - imagehash.hex_to_hash(other.imagehash_str)
                     if diff_int < threshold:
@@ -212,6 +222,9 @@ def numOfEmojiPageBtn(request):
     num_of_emoji_per_page = int(request.GET.get('num_of_emoji_per_page', "20"))
     # 獲取表符列表
     search_tag = request.GET.get('search_tag', "")
+    # 相似搜尋回傳完整清單，不使用一般標籤搜尋的分頁。
+    if search_tag.startswith('__hash__'):
+        return HttpResponse(1)
 
     # 設置表符模組物件
     Emoji_objects = Emoji.objects
