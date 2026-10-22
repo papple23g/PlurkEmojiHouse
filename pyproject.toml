@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "certifi==2026.7.22",
+    "certifi==2026.10.19",
     "dj-database-url==3.1.2",
     "dj-static==0.0.6",
     "django==5.2.17",
